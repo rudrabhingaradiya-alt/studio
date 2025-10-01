@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "logo-1",
+      "description": "Abstract knight logo",
+      "imageUrl": "https://images.unsplash.com/photo-1573932925621-4a07d654bf77?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWJzdHJhY3QlMjBrbmlnaHR8ZW58MHx8fHwxNzU5MzE1NzI3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract knight"
+    },
+    {
+      "id": "logo-2",
+      "description": "Geometric king logo",
+      "imageUrl": "https://images.unsplash.com/photo-1650336046296-48b334dbd849?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxnZW9tZXRyaWMlMjBraW5nfGVufDB8fHx8MTc1OTMxNTcyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "geometric king"
+    },
+    {
+      "id": "logo-3",
+      "description": "Minimalist rook logo",
+      "imageUrl": "https://images.unsplash.com/photo-1700978142514-e3779cc15248?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwcm9va3xlbnwwfHx8fDE3NTkzMTU3Mjd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "minimalist rook"
+    },
+    {
+      "id": "logo-4",
+      "description": "Stylized queen logo",
+      "imageUrl": "https://images.unsplash.com/photo-1659053432576-30408acaa287?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzdHlsaXplZCUyMHF1ZWVufGVufDB8fHx8MTc1OTMxNTcyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "stylized queen"
+    }
+  ]
 }
