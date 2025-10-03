@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Menu, User } from 'lucide-react';
+import { Menu, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -54,28 +54,23 @@ const Header = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="pr-0">
-                <div className="flex items-center justify-between">
+                <SheetClose asChild>
                   <Link href="/" className="flex items-center space-x-2">
                     <Logo className="h-6 w-6" />
                     <span className="font-bold">Chess Arena</span>
                   </Link>
-                  <SheetClose asChild>
-                     <Button variant="ghost" size="icon">
-                        <ArrowLeft className="h-5 w-5" />
-                        <span className="sr-only">Close</span>
-                      </Button>
-                  </SheetClose>
-                </div>
+                </SheetClose>
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
                   <div className="flex flex-col space-y-3">
                     {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className="text-foreground"
-                      >
-                        {link.label}
-                      </Link>
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="text-foreground"
+                        >
+                          {link.label}
+                        </Link>
+                      </SheetClose>
                     ))}
                   </div>
                 </div>
