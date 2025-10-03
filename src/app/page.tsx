@@ -27,7 +27,7 @@ export default function Home() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-              <Chessboard isPuzzle={true} />
+              <Chessboard isStatic={true} />
               <p className="font-semibold text-accent">White to move and win.</p>
               <Button asChild className="w-full bg-accent hover:bg-accent/90">
                 <Link href="/puzzles">Solve Puzzle</Link>

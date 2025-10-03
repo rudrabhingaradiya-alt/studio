@@ -77,7 +77,7 @@ export default function PuzzlesPage() {
             <CardContent>
               <p className="italic text-muted-foreground">"{result.reason}"</p>
               <div className="mt-4">
-                <Chessboard isPuzzle={true} />
+                <Chessboard isStatic={true} />
               </div>
             </CardContent>
             <CardFooter>

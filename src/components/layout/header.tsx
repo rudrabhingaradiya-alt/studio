@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const navLinks = [
+  { href: '/play', label: 'Play' },
   { href: '/puzzles', label: 'Puzzles' },
 ];
 
@@ -99,6 +100,9 @@ const Header = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/puzzles">Puzzles</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/play">Play</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>

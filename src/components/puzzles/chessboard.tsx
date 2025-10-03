@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | 'P' | null;
@@ -34,26 +34,53 @@ const puzzleBoard: Piece[][] = [
 
 interface ChessboardProps {
   initialBoard?: Piece[][];
-  isPuzzle?: boolean;
+  isStatic?: boolean;
 }
 
-const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isPuzzle=false }) => {
-  const board = isPuzzle ? puzzleBoard : (initialBoard || defaultBoard);
+const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false }) => {
+  const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
+  const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
+
+  const handleSquareClick = (row: number, col: number) => {
+    if (isStatic) return;
+
+    if (selectedPiece) {
+      const [startRow, startCol] = selectedPiece;
+      const piece = board[startRow][startCol];
+      
+      // Basic move logic (no validation)
+      if (piece) {
+        const newBoard = [...board.map(r => [...r])];
+        newBoard[row][col] = piece;
+        newBoard[startRow][startCol] = null;
+        setBoard(newBoard);
+      }
+      setSelectedPiece(null);
+    } else if (board[row][col]) {
+      setSelectedPiece([row, col]);
+    }
+  };
+
+
   const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
   const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
   
   return (
     <div className="relative aspect-square w-full max-w-lg mx-auto shadow-2xl rounded-lg overflow-hidden border-4 border-card">
       <div className="grid grid-cols-8 grid-rows-8 aspect-square">
-        {board.map((row, rowIndex) =>
-          row.map((piece, colIndex) => {
+        {board.map((rowArr, rowIndex) =>
+          rowArr.map((piece, colIndex) => {
             const isLight = (rowIndex + colIndex) % 2 !== 0;
+            const isSelected = selectedPiece && selectedPiece[0] === rowIndex && selectedPiece[1] === colIndex;
             return (
               <div
                 key={`${rowIndex}-${colIndex}`}
+                onClick={() => handleSquareClick(rowIndex, colIndex)}
                 className={cn(
-                  'flex items-center justify-center',
-                  isLight ? 'bg-secondary' : 'bg-primary/50'
+                  'flex items-center justify-center cursor-pointer',
+                  isLight ? 'bg-secondary' : 'bg-primary/50',
+                  isSelected && 'bg-accent/50 ring-2 ring-accent',
+                  !isStatic && 'hover:bg-accent/30'
                 )}
               >
                 <span className="text-4xl md:text-5xl" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
