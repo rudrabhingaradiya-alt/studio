@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, User } from 'lucide-react';
+import { ArrowLeft, Menu, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import Logo from '@/components/icons/logo';
 import {
   DropdownMenu,
@@ -54,10 +54,18 @@ const Header = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="pr-0">
-                <Link href="/" className="flex items-center space-x-2">
-                  <Logo className="h-6 w-6" />
-                  <span className="font-bold">Chess Arena</span>
-                </Link>
+                <div className="flex items-center justify-between">
+                  <Link href="/" className="flex items-center space-x-2">
+                    <Logo className="h-6 w-6" />
+                    <span className="font-bold">Chess Arena</span>
+                  </Link>
+                  <SheetClose asChild>
+                     <Button variant="ghost" size="icon">
+                        <ArrowLeft className="h-5 w-5" />
+                        <span className="sr-only">Close</span>
+                      </Button>
+                  </SheetClose>
+                </div>
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
                   <div className="flex flex-col space-y-3">
                     {navLinks.map((link) => (
