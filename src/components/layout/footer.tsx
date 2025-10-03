@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
     <footer className="bg-background border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <p className="text-center text-sm text-muted-foreground">
-          {currentYear && <>© {currentYear} Chess Arena. All rights reserved.</>}
+          {currentYear ? `© ${currentYear} Chess Arena. All rights reserved.` : <>&nbsp;</>}
         </p>
       </div>
     </footer>
