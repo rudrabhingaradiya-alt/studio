@@ -43,17 +43,37 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
 
   const handleSquareClick = (row: number, col: number) => {
     if (isStatic) return;
-
+  
     if (selectedPiece) {
       const [startRow, startCol] = selectedPiece;
+  
+      // Prevent moving to the same square
+      if (startRow === row && startCol === col) {
+        setSelectedPiece(null);
+        return;
+      }
+  
       const piece = board[startRow][startCol];
-      
-      // Basic move logic (no validation)
+  
+      // Simple move logic: allow moving to an empty square or capturing an opponent's piece
+      const targetPiece = board[row][col];
+      const isCapture = targetPiece !== null;
+  
       if (piece) {
-        const newBoard = [...board.map(r => [...r])];
-        newBoard[row][col] = piece;
-        newBoard[startRow][startCol] = null;
-        setBoard(newBoard);
+        // A very basic check to see if it's a different color piece
+        const isOpponent =
+          targetPiece &&
+          ((piece.toLowerCase() === piece &&
+            targetPiece.toUpperCase() === targetPiece) ||
+            (piece.toUpperCase() === piece &&
+              targetPiece.toLowerCase() === targetPiece));
+  
+        if (!isCapture || isOpponent) {
+          const newBoard = board.map((r) => [...r]);
+          newBoard[row][col] = piece;
+          newBoard[startRow][startCol] = null;
+          setBoard(newBoard);
+        }
       }
       setSelectedPiece(null);
     } else if (board[row][col]) {
