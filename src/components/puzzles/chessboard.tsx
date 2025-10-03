@@ -171,7 +171,18 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
         setPossibleMoves([]);
         return;
       }
-
+      
+      const targetPiece = board[row][col];
+      if (targetPiece && piece) {
+         const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
+         const targetColor = isWhitePiece(targetPiece) ? 'white' : 'black';
+         if (pieceColor === targetColor) {
+          setSelectedPiece([row, col]);
+          calculatePossibleMoves(row, col);
+          return;
+         }
+      }
+      
       if (piece && isValidMove(board, startRow, startCol, row, col)) {
         const newBoard = board.map((r) => [...r]);
         newBoard[row][col] = piece;
@@ -180,16 +191,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
         setSelectedPiece(null);
         setPossibleMoves([]);
       } else {
-        const targetPiece = board[row][col];
-        if (targetPiece && piece) {
-           const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
-           const targetColor = isWhitePiece(targetPiece) ? 'white' : 'black';
-           if (pieceColor === targetColor) {
-            setSelectedPiece([row, col]);
-            calculatePossibleMoves(row, col);
-            return;
-           }
-        }
         setSelectedPiece(null); 
         setPossibleMoves([]);
       }
@@ -201,6 +202,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
 
   const calculatePossibleMoves = (row: number, col: number) => {
     const moves: [number, number][] = [];
+    const piece = board[row][col];
+    if (!piece) return;
+
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
         if (isValidMove(board, row, col, i, j)) {
@@ -267,4 +271,3 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
 };
 
 export default Chessboard;
-
