@@ -12,17 +12,14 @@ const Logo = (props: SVGProps<SVGSVGElement>) => (
     {...props}
   >
     <path
-      d="M16 8C13.7909 8 12 9.79086 12 12C12 14.2091 13.7909 16 16 16C18.2091 16 20 14.2091 20 12C20 9.79086 18.2091 8 16 8Z"
+      d="M16 6C13.7909 6 12 7.79086 12 10C12 12.2091 13.7909 14 16 14C18.2091 14 20 12.2091 20 10C20 7.79086 18.2091 6 16 6Z"
       fill="currentColor"
     />
     <path
-      d="M14 17H18V21H21V23H11V21H14V17Z"
+      d="M13 15H19V18L22 18V22H24V24H8V22H10V18L13 18V15Z"
       fill="currentColor"
     />
-    <path
-      d="M10 24H22V26H10V24Z"
-      fill="currentColor"
-    />
+    <path d="M8 25H24V27H8V25Z" fill="currentColor" />
   </svg>
 );
 export default Logo;
