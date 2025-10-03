@@ -23,7 +23,7 @@ export default function Home() {
           <Card className="w-full max-w-lg shadow-2xl bg-card">
             <CardHeader>
               <CardTitle className="text-center text-3xl font-bold">
-                Challenge of the Day
+                Join Challenge of the Day
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
