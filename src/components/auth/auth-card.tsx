@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -68,10 +69,10 @@ export function AuthCard({ mode }: AuthCardProps) {
             <Input id="password" type="password" />
           </div>
           <Button
-            type="submit"
+            asChild
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            {buttonText}
+            <Link href="/play">{buttonText}</Link>
           </Button>
         </div>
       </CardContent>
