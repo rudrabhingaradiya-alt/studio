@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -44,6 +45,9 @@ const isBlackPiece = (piece: Piece) => piece !== null && piece === piece.toLower
 const isValidMove = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
   const piece = board[startRow][startCol];
   const targetPiece = board[endRow][endCol];
+  
+  if (!piece) return false;
+
   const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
 
   // Cannot capture a piece of the same color
@@ -54,7 +58,7 @@ const isValidMove = (board: Board, startRow: number, startCol: number, endRow: n
     }
   }
 
-  const pieceType = piece?.toLowerCase();
+  const pieceType = piece.toLowerCase();
   const rowDiff = Math.abs(startRow - endRow);
   const colDiff = Math.abs(startCol - endCol);
 
@@ -153,6 +157,7 @@ const isValidMove = (board: Board, startRow: number, startCol: number, endRow: n
 const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
+  const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
 
   const handleSquareClick = (row: number, col: number) => {
     if (isStatic) return;
@@ -163,6 +168,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
 
       if (startRow === row && startCol === col) {
         setSelectedPiece(null);
+        setPossibleMoves([]);
         return;
       }
 
@@ -172,22 +178,37 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
         newBoard[startRow][startCol] = null;
         setBoard(newBoard);
         setSelectedPiece(null);
+        setPossibleMoves([]);
       } else {
-        // If the new click is on another piece of the same color, select it
         const targetPiece = board[row][col];
-        if (targetPiece) {
+        if (targetPiece && piece) {
            const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
            const targetColor = isWhitePiece(targetPiece) ? 'white' : 'black';
            if (pieceColor === targetColor) {
             setSelectedPiece([row, col]);
+            calculatePossibleMoves(row, col);
             return;
            }
         }
-        setSelectedPiece(null); // Deselect on invalid move
+        setSelectedPiece(null); 
+        setPossibleMoves([]);
       }
     } else if (board[row][col]) {
       setSelectedPiece([row, col]);
+      calculatePossibleMoves(row, col);
     }
+  };
+
+  const calculatePossibleMoves = (row: number, col: number) => {
+    const moves: [number, number][] = [];
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        if (isValidMove(board, row, col, i, j)) {
+          moves.push([i, j]);
+        }
+      }
+    }
+    setPossibleMoves(moves);
   };
 
 
@@ -201,18 +222,23 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
           rowArr.map((piece, colIndex) => {
             const isLight = (rowIndex + colIndex) % 2 !== 0;
             const isSelected = selectedPiece && selectedPiece[0] === rowIndex && selectedPiece[1] === colIndex;
+            const isPossibleMove = possibleMoves.some(([r, c]) => r === rowIndex && c === colIndex);
+
             return (
               <div
                 key={`${rowIndex}-${colIndex}`}
                 onClick={() => handleSquareClick(rowIndex, colIndex)}
                 className={cn(
-                  'flex items-center justify-center cursor-pointer',
+                  'flex items-center justify-center cursor-pointer relative',
                   isLight ? 'bg-secondary' : 'bg-primary/50',
                   isSelected && 'bg-accent/50 ring-2 ring-accent',
                   !isStatic && 'hover:bg-accent/30'
                 )}
               >
-                <span className="text-4xl md:text-5xl" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                {isPossibleMove && (
+                  <div className="absolute h-1/3 w-1/3 rounded-full bg-black/20" />
+                )}
+                <span className="text-4xl md:text-5xl relative" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
                   {piece && pieceToUnicode[piece]}
                 </span>
               </div>
@@ -241,3 +267,4 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
 };
 
 export default Chessboard;
+
