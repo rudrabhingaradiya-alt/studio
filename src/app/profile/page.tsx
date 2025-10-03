@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -172,6 +173,9 @@ export default function ProfilePage() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Choose your AI-Generated Logo</DialogTitle>
+                    <DialogDescription>
+                      Select one of the logos below to update your profile avatar.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-4 py-4">
                     {PlaceHolderImages.map((img) => (
