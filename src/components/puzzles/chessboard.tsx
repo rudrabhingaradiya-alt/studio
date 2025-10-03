@@ -4,13 +4,14 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | 'P' | null;
+type Board = Piece[][];
 
 const pieceToUnicode: { [key in Piece as string]: string } = {
   k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
   K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
 };
 
-const defaultBoard: Piece[][] = [
+const defaultBoard: Board = [
   ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
   ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
   [null, null, null, null, null, null, null, null],
@@ -21,7 +22,7 @@ const defaultBoard: Piece[][] = [
   ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
 ];
 
-const puzzleBoard: Piece[][] = [
+const puzzleBoard: Board = [
     [null, null, null, null, null, 'r', null, 'k'],
     [null, null, 'p', null, 'p', 'p', 'p', 'p'],
     [null, 'p', 'n', null, null, 'n', 'b', null],
@@ -33,9 +34,121 @@ const puzzleBoard: Piece[][] = [
 ];
 
 interface ChessboardProps {
-  initialBoard?: Piece[][];
+  initialBoard?: Board;
   isStatic?: boolean;
 }
+
+const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
+const isBlackPiece = (piece: Piece) => piece !== null && piece === piece.toLowerCase();
+
+const isValidMove = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
+  const piece = board[startRow][startCol];
+  const targetPiece = board[endRow][endCol];
+  const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
+
+  // Cannot capture a piece of the same color
+  if (targetPiece) {
+    const targetColor = isWhitePiece(targetPiece) ? 'white' : 'black';
+    if (pieceColor === targetColor) {
+      return false;
+    }
+  }
+
+  const pieceType = piece?.toLowerCase();
+  const rowDiff = Math.abs(startRow - endRow);
+  const colDiff = Math.abs(startCol - endCol);
+
+  switch (pieceType) {
+    case 'p': // Pawn
+      const direction = pieceColor === 'white' ? -1 : 1;
+      // Moving forward
+      if (startCol === endCol && targetPiece === null) {
+        // Move one square
+        if (startRow + direction === endRow) return true;
+        // Move two squares from starting position
+        const startRank = pieceColor === 'white' ? 6 : 1;
+        if (startRow === startRank && startRow + 2 * direction === endRow && board[startRow + direction][startCol] === null) {
+          return true;
+        }
+      }
+      // Capturing
+      if (rowDiff === 1 && colDiff === 1 && targetPiece !== null && startRow + direction === endRow) {
+        return true;
+      }
+      return false;
+
+    case 'r': // Rook
+      if (startRow === endRow || startCol === endCol) {
+        // Check for pieces in the path
+        if (startRow === endRow) { // Horizontal move
+          const [minCol, maxCol] = [Math.min(startCol, endCol), Math.max(startCol, endCol)];
+          for (let col = minCol + 1; col < maxCol; col++) {
+            if (board[startRow][col] !== null) return false;
+          }
+        } else { // Vertical move
+          const [minRow, maxRow] = [Math.min(startRow, endRow), Math.max(startRow, endRow)];
+          for (let row = minRow + 1; row < maxRow; row++) {
+            if (board[row][startCol] !== null) return false;
+          }
+        }
+        return true;
+      }
+      return false;
+
+    case 'n': // Knight
+      return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+
+    case 'b': // Bishop
+      if (rowDiff === colDiff) {
+        // Check for pieces in the path
+        const rowStep = (endRow - startRow) > 0 ? 1 : -1;
+        const colStep = (endCol - startCol) > 0 ? 1 : -1;
+        for (let i = 1; i < rowDiff; i++) {
+          if (board[startRow + i * rowStep][startCol + i * colStep] !== null) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+
+    case 'q': // Queen
+      // Rook-like move
+      if (startRow === endRow || startCol === endCol) {
+        if (startRow === endRow) {
+          const [minCol, maxCol] = [Math.min(startCol, endCol), Math.max(startCol, endCol)];
+          for (let col = minCol + 1; col < maxCol; col++) {
+            if (board[startRow][col] !== null) return false;
+          }
+        } else {
+          const [minRow, maxRow] = [Math.min(startRow, endRow), Math.max(startRow, endRow)];
+          for (let row = minRow + 1; row < maxRow; row++) {
+            if (board[row][startCol] !== null) return false;
+          }
+        }
+        return true;
+      }
+      // Bishop-like move
+      if (rowDiff === colDiff) {
+        const rowStep = (endRow - startRow) > 0 ? 1 : -1;
+        const colStep = (endCol - startCol) > 0 ? 1 : -1;
+        for (let i = 1; i < rowDiff; i++) {
+          if (board[startRow + i * rowStep][startCol + i * colStep] !== null) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
+
+    case 'k': // King
+      return rowDiff <= 1 && colDiff <= 1;
+
+    default:
+      return false;
+  }
+};
+
 
 const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
@@ -43,39 +156,35 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
 
   const handleSquareClick = (row: number, col: number) => {
     if (isStatic) return;
-  
+
     if (selectedPiece) {
       const [startRow, startCol] = selectedPiece;
-  
-      // Prevent moving to the same square
+      const piece = board[startRow][startCol];
+
       if (startRow === row && startCol === col) {
         setSelectedPiece(null);
         return;
       }
-  
-      const piece = board[startRow][startCol];
-  
-      // Simple move logic: allow moving to an empty square or capturing an opponent's piece
-      const targetPiece = board[row][col];
-      const isCapture = targetPiece !== null;
-  
-      if (piece) {
-        // A very basic check to see if it's a different color piece
-        const isOpponent =
-          targetPiece &&
-          ((piece.toLowerCase() === piece &&
-            targetPiece.toUpperCase() === targetPiece) ||
-            (piece.toUpperCase() === piece &&
-              targetPiece.toLowerCase() === targetPiece));
-  
-        if (!isCapture || isOpponent) {
-          const newBoard = board.map((r) => [...r]);
-          newBoard[row][col] = piece;
-          newBoard[startRow][startCol] = null;
-          setBoard(newBoard);
+
+      if (piece && isValidMove(board, startRow, startCol, row, col)) {
+        const newBoard = board.map((r) => [...r]);
+        newBoard[row][col] = piece;
+        newBoard[startRow][startCol] = null;
+        setBoard(newBoard);
+        setSelectedPiece(null);
+      } else {
+        // If the new click is on another piece of the same color, select it
+        const targetPiece = board[row][col];
+        if (targetPiece) {
+           const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
+           const targetColor = isWhitePiece(targetPiece) ? 'white' : 'black';
+           if (pieceColor === targetColor) {
+            setSelectedPiece([row, col]);
+            return;
+           }
         }
+        setSelectedPiece(null); // Deselect on invalid move
       }
-      setSelectedPiece(null);
     } else if (board[row][col]) {
       setSelectedPiece([row, col]);
     }
