@@ -5,7 +5,12 @@ import { Menu, User } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from '@/components/ui/sheet';
 import Logo from '@/components/icons/logo';
 import {
   DropdownMenu,
@@ -21,9 +26,137 @@ const navLinks = [
   { href: '/puzzles', label: 'Puzzles' },
 ];
 
-const Header = () => {
+const UserDropdown = () => {
   // TODO: Replace with real authentication check
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <User className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">
+              {isLoggedIn ? 'Player One' : 'Guest'}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {isLoggedIn
+                ? 'player.one@chessarena.com'
+                : 'guest@chessarena.com'}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {isLoggedIn ? (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/profile">Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <button
+                onClick={() => setIsLoggedIn(false)}
+                className="w-full text-left"
+              >
+                Log out
+              </button>
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <DropdownMenuItem asChild>
+            <button
+              onClick={() => setIsLoggedIn(true)}
+              className="w-full text-left"
+            >
+              Log in
+            </button>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const Header = () => {
+  // Note: isLoggedIn state is now managed inside UserDropdown to prevent hydration errors.
+  // For the purpose of showing/hiding nav links, we'll use a separate state here.
+  // In a real app, this would be derived from a global auth context.
+  const [isNavVisible, setIsNavVisible] = useState(false); 
+
+  // A simple effect to simulate login state change for nav visibility.
+  // This is a temporary solution for the prototype.
+  const handleLoginForNav = (status: boolean) => {
+    setIsNavVisible(status);
+  }
+
+  // We'll wrap the DropdownMenu to intercept the login/logout clicks
+  // This is a workaround for the prototype. In a real app, use a global state manager (Context, Redux, etc).
+  const PatchedUserDropdown = () => {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+    const handleLogin = () => {
+      setIsLoggedIn(true);
+      handleLoginForNav(true);
+    };
+
+    const handleLogout = () => {
+      setIsLoggedIn(false);
+      handleLoginForNav(false);
+    };
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <User className="h-5 w-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">
+                {isLoggedIn ? 'Player One' : 'Guest'}
+              </p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {isLoggedIn
+                  ? 'player.one@chessarena.com'
+                  : 'guest@chessarena.com'}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {isLoggedIn ? (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/profile">Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left"
+                >
+                  Log out
+                </button>
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem asChild>
+              <button
+                onClick={handleLogin}
+                className="w-full text-left"
+              >
+                Log in
+              </button>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -35,7 +168,7 @@ const Header = () => {
               Chess Arena
             </span>
           </Link>
-          {isLoggedIn && (
+          {isNavVisible && (
             <nav className="flex items-center space-x-6 text-sm font-medium">
               {navLinks.map((link) => (
                 <Link
@@ -67,14 +200,11 @@ const Header = () => {
                   </Link>
                 </SheetClose>
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-                  {isLoggedIn && (
+                  {isNavVisible && (
                     <div className="flex flex-col space-y-3">
                       {navLinks.map((link) => (
                         <SheetClose asChild key={link.href}>
-                          <Link
-                            href={link.href}
-                            className="text-foreground"
-                          >
+                          <Link href={link.href} className="text-foreground">
                             {link.label}
                           </Link>
                         </SheetClose>
@@ -86,42 +216,11 @@ const Header = () => {
             </Sheet>
           </div>
           <div className="flex items-center gap-4">
-             <Link href="/" className="flex items-center space-x-2 md:hidden">
+            <Link href="/" className="flex items-center space-x-2 md:hidden">
               <Logo className="h-6 w-6" />
               <span className="font-bold">Chess Arena</span>
             </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{isLoggedIn ? 'Player One' : 'Guest'}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {isLoggedIn ? 'player.one@chessarena.com' : 'guest@chessarena.com'}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {isLoggedIn ? (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <button onClick={() => setIsLoggedIn(false)} className="w-full text-left">Log out</button>
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <DropdownMenuItem asChild>
-                     <button onClick={() => setIsLoggedIn(true)} className="w-full text-left">Log in</button>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <PatchedUserDropdown />
           </div>
         </div>
       </div>
