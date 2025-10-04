@@ -16,7 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, CheckCircle, Loader2, Star, Trophy, XCircle, History, Puzzle } from 'lucide-react';
+import { BrainCircuit, Loader2, Star, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -40,67 +40,6 @@ const mockGameHistory: GameHistoryItem[] = [
     { opponent: 'Robot (Intermediate)', result: 'Loss', date: '2024-07-27' },
     { opponent: 'Robot (Adept)', result: 'Draw', date: '2024-07-26' },
 ];
-
-const PuzzleStats = ({ history }: { history: PuzzleHistoryItem[] }) => {
-  const totalPuzzles = history.length;
-  const solvedPuzzles = history.filter(p => p.solved).length;
-  const solveRate = totalPuzzles > 0 ? Math.round((solvedPuzzles / totalPuzzles) * 100) : 0;
-  
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Puzzle className="h-6 w-6" />
-          Puzzle History
-        </CardTitle>
-        <CardDescription>Your puzzle-solving performance.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-2xl font-bold">{totalPuzzles}</p>
-            <p className="text-sm text-muted-foreground">Attempted</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-green-500">{solvedPuzzles}</p>
-            <p className="text-sm text-muted-foreground">Solved</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold">{solveRate}%</p>
-            <p className="text-sm text-muted-foreground">Solve Rate</p>
-          </div>
-        </div>
-        <div className="mt-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Puzzle ID</TableHead>
-                <TableHead>Attempts</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.map((puzzle, index) => (
-                <TableRow key={index}>
-                  <TableCell>{puzzle.puzzleId}</TableCell>
-                  <TableCell>{puzzle.attempts}</TableCell>
-                  <TableCell>
-                    {puzzle.solved ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-destructive" />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
 
 export default function ProfilePage() {
   const [recommendations, setRecommendations] = useState<string[]>([]);
@@ -154,7 +93,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="mb-8">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -184,12 +123,11 @@ export default function ProfilePage() {
             </Table>
           </CardContent>
         </Card>
-        <PuzzleStats history={mockPuzzleHistory} />
       </div>
 
       <Tabs defaultValue="recommendations" className="mt-8">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+          <TabsTrigger value="recommendations">AI Tools</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
