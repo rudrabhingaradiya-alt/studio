@@ -41,13 +41,17 @@ export function AuthCard({ mode }: AuthCardProps) {
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full">
-              <GoogleLogo className="mr-2 h-4 w-4" />
-              Google
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/play">
+                <GoogleLogo className="mr-2 h-4 w-4" />
+                Google
+              </Link>
             </Button>
-            <Button variant="outline" className="w-full">
-              <AppleLogo className="mr-2 h-4 w-4" />
-              Apple
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/play">
+                <AppleLogo className="mr-2 h-4 w-4" />
+                Apple
+              </Link>
             </Button>
           </div>
           <div className="relative">
@@ -87,7 +91,7 @@ export function AuthCard({ mode }: AuthCardProps) {
           </Link>
         </div>
         <Button variant="link" className="text-accent" asChild>
-          <Link href="/">Continue as Guest</Link>
+          <Link href="/play">Continue as Guest</Link>
         </Button>
       </CardFooter>
     </Card>
