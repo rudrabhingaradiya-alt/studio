@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, User, Users, ChevronLeft } from 'lucide-react';
+import { Bot, User, Users, ChevronLeft, Link as LinkIcon, Clipboard } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Chessboard from '@/components/puzzles/chessboard';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 type GameMode = 'robot' | 'online' | 'friend';
 type RobotLevel = {
@@ -42,7 +44,7 @@ const gameModes: {
     title: 'Play with a Friend',
     description: 'Invite a friend to a game using a private link.',
     icon: User,
-    isAvailable: false,
+    isAvailable: true,
   },
 ];
 
@@ -108,6 +110,74 @@ const RobotSelection = ({ onSelect, onBack }: { onSelect: (level: RobotLevel) =>
   </div>
 );
 
+const FriendLobby = ({ onBack }: { onBack: () => void }) => {
+  const [gameLink, setGameLink] = useState('');
+  const { toast } = useToast();
+
+  const handleCreateGame = () => {
+    // In a real app, this would call a backend to create a game and get a unique ID
+    const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
+    const link = `${window.location.origin}/play/${gameId}`;
+    setGameLink(link);
+  };
+  
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(gameLink);
+    toast({
+      title: 'Copied to clipboard!',
+      description: 'The game link is ready to be shared.',
+    });
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
+      <div className="relative mx-auto max-w-2xl text-center">
+        <Button variant="ghost" onClick={onBack} className="absolute top-0 left-0 -translate-y-1/2">
+          <ChevronLeft className="h-5 w-5 mr-2" />
+          Back
+        </Button>
+        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+          Play with a Friend
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          Create a private game and share the link with your friend to start.
+        </p>
+      </div>
+
+      <div className="mt-12 mx-auto max-w-md">
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Your Game</CardTitle>
+            <CardDescription>
+              {gameLink ? 'Share this link with your friend.' : 'Click the button to generate a unique game link.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {gameLink ? (
+              <div className="flex items-center space-x-2">
+                <Input value={gameLink} readOnly className="flex-grow" />
+                <Button variant="outline" size="icon" onClick={handleCopyToClipboard}>
+                  <Clipboard className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button className="w-full" onClick={handleCreateGame}>
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Create Game Link
+              </Button>
+            )}
+            {gameLink && (
+              <p className="mt-4 text-sm text-muted-foreground text-center">
+                Waiting for friend to join...
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
 
 export default function PlayPage() {
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
@@ -155,6 +225,11 @@ export default function PlayPage() {
     }
     return <RobotSelection onSelect={handleRobotSelect} onBack={() => setSelectedMode(null)} />;
   }
+  
+  if (selectedMode === 'friend') {
+    return <FriendLobby onBack={() => setSelectedMode(null)} />;
+  }
+
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
