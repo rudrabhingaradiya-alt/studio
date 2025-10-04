@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -16,7 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, CheckCircle, Loader2, Star, Trophy, XCircle } from 'lucide-react';
+import { BrainCircuit, CheckCircle, Loader2, Star, Trophy, XCircle, History, Puzzle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -40,6 +40,66 @@ const mockGameHistory: GameHistoryItem[] = [
     { opponent: 'Robot (Intermediate)', result: 'Loss', date: '2024-07-27' },
     { opponent: 'Robot (Adept)', result: 'Draw', date: '2024-07-26' },
 ];
+
+const PuzzleStats = ({ history }: { history: PuzzleHistoryItem[] }) => {
+  const totalPuzzles = history.length;
+  const solvedPuzzles = history.filter(p => p.solved).length;
+  const solveRate = totalPuzzles > 0 ? Math.round((solvedPuzzles / totalPuzzles) * 100) : 0;
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Puzzle className="h-6 w-6" />
+          Puzzle History
+        </CardTitle>
+        <CardDescription>Your puzzle-solving performance.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <p className="text-2xl font-bold">{totalPuzzles}</p>
+            <p className="text-sm text-muted-foreground">Attempted</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-green-500">{solvedPuzzles}</p>
+            <p className="text-sm text-muted-foreground">Solved</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold">{solveRate}%</p>
+            <p className="text-sm text-muted-foreground">Solve Rate</p>
+          </div>
+        </div>
+        <div className="mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Puzzle ID</TableHead>
+                <TableHead>Attempts</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {history.map((puzzle, index) => (
+                <TableRow key={index}>
+                  <TableCell>{puzzle.puzzleId}</TableCell>
+                  <TableCell>{puzzle.attempts}</TableCell>
+                  <TableCell>
+                    {puzzle.solved ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-destructive" />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 
 export default function ProfilePage() {
@@ -94,50 +154,54 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <Tabs defaultValue="history">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="history">Game History</TabsTrigger>
+      <div className="grid gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-6 w-6" />
+              Game History
+            </CardTitle>
+            <CardDescription>Your recent online matches.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Opponent</TableHead>
+                  <TableHead>Result</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {mockGameHistory.map((game, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{game.opponent}</TableCell>
+                    <TableCell>{getResultBadge(game.result)}</TableCell>
+                    <TableCell>{new Date(game.date).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        <PuzzleStats history={mockPuzzleHistory} />
+      </div>
+
+      <Tabs defaultValue="recommendations" className="mt-8">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="history" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Game History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Opponent</TableHead>
-                    <TableHead>Result</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockGameHistory.map((game, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{game.opponent}</TableCell>
-                      <TableCell>{getResultBadge(game.result)}</TableCell>
-                      <TableCell>{new Date(game.date).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="recommendations" className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle>AI Puzzle Recommendations</CardTitle>
+              <CardDescription>
+                Get puzzles recommended by our AI to improve your skills.
+              </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <p className="mb-4 text-muted-foreground">
-                Get puzzles recommended by our AI to improve your skills.
-              </p>
               <Button onClick={handleGetRecommendations} disabled={isLoading}>
                 {isLoading ? (
                   <>
