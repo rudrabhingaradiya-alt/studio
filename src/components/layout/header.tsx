@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Menu, User } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -21,6 +22,9 @@ const navLinks = [
 ];
 
 const Header = () => {
+  // TODO: Replace with real authentication check
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
@@ -31,17 +35,19 @@ const Header = () => {
               Chess Arena
             </span>
           </Link>
-          <nav className="flex items-center space-x-6 text-sm font-medium">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="transition-colors hover:text-foreground/80 text-foreground/60"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          {isLoggedIn && (
+            <nav className="flex items-center space-x-6 text-sm font-medium">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="transition-colors hover:text-foreground/80 text-foreground/60"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          )}
         </div>
 
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
@@ -61,18 +67,20 @@ const Header = () => {
                   </Link>
                 </SheetClose>
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-                  <div className="flex flex-col space-y-3">
-                    {navLinks.map((link) => (
-                      <SheetClose asChild key={link.href}>
-                        <Link
-                          href={link.href}
-                          className="text-foreground"
-                        >
-                          {link.label}
-                        </Link>
-                      </SheetClose>
-                    ))}
-                  </div>
+                  {isLoggedIn && (
+                    <div className="flex flex-col space-y-3">
+                      {navLinks.map((link) => (
+                        <SheetClose asChild key={link.href}>
+                          <Link
+                            href={link.href}
+                            className="text-foreground"
+                          >
+                            {link.label}
+                          </Link>
+                        </SheetClose>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
@@ -91,23 +99,27 @@ const Header = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Guest</p>
+                    <p className="text-sm font-medium leading-none">{isLoggedIn ? 'Player One' : 'Guest'}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      guest@chessarena.com
+                      {isLoggedIn ? 'player.one@chessarena.com' : 'guest@chessarena.com'}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/puzzles">Puzzles</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login">Log in</Link>
-                </DropdownMenuItem>
+                {isLoggedIn ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <button onClick={() => setIsLoggedIn(false)} className="w-full text-left">Log out</button>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem asChild>
+                     <button onClick={() => setIsLoggedIn(true)} className="w-full text-left">Log in</button>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
