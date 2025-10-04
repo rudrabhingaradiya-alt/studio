@@ -50,7 +50,42 @@ const getPieceColor = (piece: Piece): PlayerTurn | null => {
     return null;
 }
 
-const isValidMove = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
+const isSquareAttacked = (board: Board, row: number, col: number, attackerColor: PlayerTurn): boolean => {
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece && getPieceColor(piece) === attackerColor) {
+                if (isMoveValidWithoutCheck(board, r, c, row, col)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+};
+
+const findKing = (board: Board, color: PlayerTurn): [number, number] | null => {
+    const kingPiece = color === 'white' ? 'K' : 'k';
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (board[r][c] === kingPiece) {
+                return [r, c];
+            }
+        }
+    }
+    return null;
+};
+
+const isKingInCheck = (board: Board, kingColor: PlayerTurn): boolean => {
+    const kingPos = findKing(board, kingColor);
+    if (!kingPos) return false; // Should not happen in a real game
+    const [kingRow, kingCol] = kingPos;
+    const opponentColor = kingColor === 'white' ? 'black' : 'white';
+    return isSquareAttacked(board, kingRow, kingCol, opponentColor);
+};
+
+
+const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
   const piece = board[startRow][startCol];
   const targetPiece = board[endRow][endCol];
   
@@ -161,6 +196,26 @@ const isValidMove = (board: Board, startRow: number, startCol: number, endRow: n
   }
 };
 
+const isValidMove = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
+    if (!isMoveValidWithoutCheck(board, startRow, startCol, endRow, endCol)) {
+        return false;
+    }
+
+    const piece = board[startRow][startCol];
+    if (!piece) return false;
+
+    const pieceColor = getPieceColor(piece);
+    if (!pieceColor) return false;
+
+    // Simulate the move
+    const newBoard = board.map(r => [...r]);
+    newBoard[endRow][endCol] = newBoard[startRow][startCol];
+    newBoard[startRow][startCol] = null;
+
+    // Check if the king of the moving player is in check after the move
+    return !isKingInCheck(newBoard, pieceColor);
+};
+
 
 const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800 }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
@@ -214,7 +269,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       const thinkTime = 500 + Math.random() * 500;
       setTimeout(() => makeAIMove(board), thinkTime);
     }
-  }, [turn, board, isStatic]);
+  }, [turn, board, isStatic, makeAIMove]);
 
 
   const handleSquareClick = (row: number, col: number) => {
@@ -302,6 +357,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
               >
                 {isPossibleMove && !isWhitePiece(board[rowIndex][colIndex]) && (
                   <div className="absolute h-1/3 w-1/3 rounded-full bg-black/20" />
+                )}
+                 {isPossibleMove && isWhitePiece(board[rowIndex][colIndex]) && (
+                  <div className="absolute h-[90%] w-[90%] rounded-full border-4 border-black/20" />
                 )}
                 <span className="text-4xl md:text-5xl relative" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
                   {piece && pieceToUnicode[piece]}
