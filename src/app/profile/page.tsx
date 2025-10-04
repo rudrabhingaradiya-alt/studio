@@ -14,9 +14,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { PuzzleHistoryItem } from '@/lib/types';
+import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, CheckCircle, Loader2, Star, XCircle } from 'lucide-react';
+import { BrainCircuit, CheckCircle, Loader2, Star, Trophy, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -27,12 +27,20 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Badge } from '@/components/ui/badge';
 
-const mockHistory: PuzzleHistoryItem[] = [
+const mockPuzzleHistory: PuzzleHistoryItem[] = [
   { puzzleId: 'pz301', attempts: 1, solved: true },
   { puzzleId: 'pz482', attempts: 3, solved: false },
   { puzzleId: 'pz109', attempts: 2, solved: true },
 ];
+
+const mockGameHistory: GameHistoryItem[] = [
+    { opponent: 'Robot (Beginner)', result: 'Win', date: '2024-07-28' },
+    { opponent: 'Robot (Intermediate)', result: 'Loss', date: '2024-07-27' },
+    { opponent: 'Robot (Adept)', result: 'Draw', date: '2024-07-26' },
+];
+
 
 export default function ProfilePage() {
   const [recommendations, setRecommendations] = useState<string[]>([]);
@@ -43,7 +51,7 @@ export default function ProfilePage() {
   const handleGetRecommendations = async () => {
     setIsLoading(true);
     const { recommendations: recs, error } = await getPuzzleRecommendations({
-      puzzleHistory: mockHistory,
+      puzzleHistory: mockPuzzleHistory,
       numberOfPuzzles: 3,
     });
     if (error) {
@@ -57,6 +65,17 @@ export default function ProfilePage() {
     }
     setIsLoading(false);
   };
+  
+  const getResultBadge = (result: 'Win' | 'Loss' | 'Draw') => {
+    switch (result) {
+      case 'Win':
+        return <Badge variant="default" className="bg-green-500">Win</Badge>;
+      case 'Loss':
+        return <Badge variant="destructive">Loss</Badge>;
+      case 'Draw':
+        return <Badge variant="secondary">Draw</Badge>;
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -77,7 +96,7 @@ export default function ProfilePage() {
 
       <Tabs defaultValue="history">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="history">Game History</TabsTrigger>
           <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
@@ -85,29 +104,23 @@ export default function ProfilePage() {
         <TabsContent value="history" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Puzzle History</CardTitle>
+              <CardTitle>Game History</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Puzzle ID</TableHead>
-                    <TableHead>Attempts</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Opponent</TableHead>
+                    <TableHead>Result</TableHead>
+                    <TableHead>Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockHistory.map((item) => (
-                    <TableRow key={item.puzzleId}>
-                      <TableCell>{item.puzzleId}</TableCell>
-                      <TableCell>{item.attempts}</TableCell>
-                      <TableCell>
-                        {item.solved ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-destructive" />
-                        )}
-                      </TableCell>
+                  {mockGameHistory.map((game, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{game.opponent}</TableCell>
+                      <TableCell>{getResultBadge(game.result)}</TableCell>
+                      <TableCell>{new Date(game.date).toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
