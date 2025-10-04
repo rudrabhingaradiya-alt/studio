@@ -38,6 +38,7 @@ const puzzleBoard: Board = [
 interface ChessboardProps {
   initialBoard?: Board;
   isStatic?: boolean;
+  aiLevel?: number;
 }
 
 const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
@@ -161,7 +162,7 @@ const isValidMove = (board: Board, startRow: number, startCol: number, endRow: n
 };
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800 }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
@@ -209,8 +210,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
   
   useEffect(() => {
     if (turn === 'black' && !isStatic) {
-      // AI's turn
-      setTimeout(() => makeAIMove(board), 500);
+      // AI's turn. The timeout can be adjusted based on aiLevel for perceived difficulty.
+      const thinkTime = 500 + Math.random() * 500;
+      setTimeout(() => makeAIMove(board), thinkTime);
     }
   }, [turn, board, isStatic]);
 
@@ -239,7 +241,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
       }
       
       // Attempt to move
-      if (isValidMove(board, startRow, startCol, row, col)) {
+      if (possibleMoves.some(([r, c]) => r === row && c === col)) {
         const newBoard = board.map((r) => [...r]);
         newBoard[row][col] = newBoard[startRow][startCol];
         newBoard[startRow][startCol] = null;
@@ -298,7 +300,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
                   !isStatic && turn === 'white' && 'hover:bg-accent/30'
                 )}
               >
-                {isPossibleMove && (
+                {isPossibleMove && !isWhitePiece(board[rowIndex][colIndex]) && (
                   <div className="absolute h-1/3 w-1/3 rounded-full bg-black/20" />
                 )}
                 <span className="text-4xl md:text-5xl relative" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>

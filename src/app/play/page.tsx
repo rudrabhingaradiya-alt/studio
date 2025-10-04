@@ -1,13 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, User, Users } from 'lucide-react';
+import { Bot, User, Users, ChevronLeft } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Chessboard from '@/components/puzzles/chessboard';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type GameMode = 'robot' | 'online' | 'friend';
+type RobotLevel = {
+  name: string;
+  rating: number;
+  description: string;
+};
 
 const gameModes: {
   id: GameMode;
@@ -39,8 +46,66 @@ const gameModes: {
   },
 ];
 
+const robotLevels: RobotLevel[] = [
+  { name: "Newcomer", rating: 200, description: "Just learning the moves." },
+  { name: "Beginner", rating: 400, description: "Understands basic strategy." },
+  { name: "Novice", rating: 600, description: "Starts to see simple tactics." },
+  { name: "Intermediate", rating: 800, description: "Avoids basic blunders." },
+  { name: "Experienced", rating: 1000, description: "A solid, casual player." },
+  { name: "Skilled", rating: 1200, description: "Thinks a few moves ahead." },
+  { name: "Expert", rating: 1500, description: "Strong tactical awareness." },
+  { name: "Master", rating: 2000, description: "Deep strategic understanding." },
+  { name: "Grandmaster", rating: 2500, description: "World-class performance." },
+  { name: "Super Grandmaster", rating: 2800, description: "The pinnacle of chess skill." },
+  { name: "Stockfish", rating: 3200, description: "The strongest chess engine." },
+];
+
+const RobotSelection = ({ onSelect, onBack }: { onSelect: (level: RobotLevel) => void, onBack: () => void }) => (
+  <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
+    <div className="mx-auto max-w-3xl text-center">
+      <Button variant="ghost" onClick={onBack} className="absolute top-4 left-4 md:top-8 md:left-8">
+        <ChevronLeft className="h-5 w-5 mr-2" />
+        Back
+      </Button>
+      <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+        Choose Your Opponent
+      </h1>
+      <p className="mt-4 text-lg text-muted-foreground">
+        Select a robot to match your skill level.
+      </p>
+    </div>
+    <ScrollArea className="mt-12 mx-auto max-w-4xl h-[calc(100vh-22rem)]">
+      <div className="grid gap-4 p-1">
+        {robotLevels.map((level) => (
+          <Card
+            key={level.rating}
+            onClick={() => onSelect(level)}
+            className="flex items-center justify-between p-4 transition-all cursor-pointer hover:border-primary hover:shadow-lg"
+          >
+            <div className="flex items-center gap-4">
+               <div className="rounded-full bg-primary/10 p-3 text-primary">
+                <Bot className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">{level.name}</CardTitle>
+                <CardDescription>{level.description}</CardDescription>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold">{level.rating}</p>
+              <p className="text-sm text-muted-foreground">Rating</p>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </ScrollArea>
+  </div>
+);
+
+
 export default function PlayPage() {
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
+  const [selectedRobotLevel, setSelectedRobotLevel] = useState<RobotLevel | null>(null);
 
   const handleModeSelect = (mode: GameMode) => {
     const gameMode = gameModes.find((m) => m.id === mode);
@@ -48,25 +113,41 @@ export default function PlayPage() {
       setSelectedMode(mode);
     }
   };
+  
+  const handleRobotSelect = (level: RobotLevel) => {
+    setSelectedRobotLevel(level);
+  }
+
+  const resetSelection = () => {
+    setSelectedMode(null);
+    setSelectedRobotLevel(null);
+  }
 
   if (selectedMode === 'robot') {
-    return (
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="flex justify-center">
-          <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
-            <CardHeader className="text-center">
-              <CardTitle>Game in Progress</CardTitle>
-              <CardDescription>
-                You are playing against the AI. It's your move.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Chessboard />
-            </CardContent>
-          </Card>
+    if (selectedRobotLevel) {
+      return (
+        <div className="container mx-auto px-4 py-8 md:py-12">
+           <Button variant="ghost" onClick={resetSelection} className="mb-4">
+            <ChevronLeft className="h-5 w-5 mr-2" />
+            Back to menu
+          </Button>
+          <div className="flex justify-center">
+            <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
+              <CardHeader className="text-center">
+                <CardTitle>vs. {selectedRobotLevel.name} ({selectedRobotLevel.rating})</CardTitle>
+                <CardDescription>
+                  You are playing against the AI. It's your move.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Chessboard aiLevel={selectedRobotLevel.rating} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    return <RobotSelection onSelect={handleRobotSelect} onBack={() => setSelectedMode(null)} />;
   }
 
   return (
