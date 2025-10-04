@@ -1,11 +1,12 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | 'P' | null;
 type Board = Piece[][];
+type PlayerTurn = 'white' | 'black';
 
 const pieceToUnicode: { [key in Piece as string]: string } = {
   k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
@@ -42,17 +43,23 @@ interface ChessboardProps {
 const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
 const isBlackPiece = (piece: Piece) => piece !== null && piece === piece.toLowerCase();
 
+const getPieceColor = (piece: Piece): PlayerTurn | null => {
+    if (isWhitePiece(piece)) return 'white';
+    if (isBlackPiece(piece)) return 'black';
+    return null;
+}
+
 const isValidMove = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
   const piece = board[startRow][startCol];
   const targetPiece = board[endRow][endCol];
   
   if (!piece) return false;
 
-  const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
+  const pieceColor = getPieceColor(piece);
 
   // Cannot capture a piece of the same color
   if (targetPiece) {
-    const targetColor = isWhitePiece(targetPiece) ? 'white' : 'black';
+    const targetColor = getPieceColor(targetPiece);
     if (pieceColor === targetColor) {
       return false;
     }
@@ -158,43 +165,95 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
+  const [turn, setTurn] = useState<PlayerTurn>('white');
+
+  const makeAIMove = (currentBoard: Board) => {
+    const aiColor = 'black';
+    const allAIMoves: { start: [number, number]; end: [number, number] }[] = [];
+
+    // Find all possible moves for the AI
+    for (let r1 = 0; r1 < 8; r1++) {
+      for (let c1 = 0; c1 < 8; c1++) {
+        const piece = currentBoard[r1][c1];
+        if (piece && getPieceColor(piece) === aiColor) {
+          for (let r2 = 0; r2 < 8; r2++) {
+            for (let c2 = 0; c2 < 8; c2++) {
+              if (isValidMove(currentBoard, r1, c1, r2, c2)) {
+                allAIMoves.push({ start: [r1, c1], end: [r2, c2] });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (allAIMoves.length === 0) {
+      console.log('Checkmate or stalemate!');
+      return;
+    }
+
+    // Select a random move
+    const randomMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
+    const { start, end } = randomMove;
+    const [startRow, startCol] = start;
+    const [endRow, endCol] = end;
+
+    const pieceToMove = currentBoard[startRow][startCol];
+    const newBoard = currentBoard.map((r) => [...r]);
+    newBoard[endRow][endCol] = pieceToMove;
+    newBoard[startRow][startCol] = null;
+
+    setBoard(newBoard);
+    setTurn('white'); // Switch turn back to the player
+  };
+  
+  useEffect(() => {
+    if (turn === 'black' && !isStatic) {
+      // AI's turn
+      setTimeout(() => makeAIMove(board), 500);
+    }
+  }, [turn, board, isStatic]);
+
 
   const handleSquareClick = (row: number, col: number) => {
-    if (isStatic) return;
+    if (isStatic || turn !== 'white') return; // Only allow player to move on their turn
+
+    const clickedPiece = board[row][col];
+    const clickedPieceColor = getPieceColor(clickedPiece);
 
     if (selectedPiece) {
       const [startRow, startCol] = selectedPiece;
-      const piece = board[startRow][startCol];
-
+      
+      // If clicking the same piece, deselect it
       if (startRow === row && startCol === col) {
         setSelectedPiece(null);
         setPossibleMoves([]);
         return;
       }
-      
-      const targetPiece = board[row][col];
-      if (targetPiece && piece) {
-         const pieceColor = isWhitePiece(piece) ? 'white' : 'black';
-         const targetColor = isWhitePiece(targetPiece) ? 'white' : 'black';
-         if (pieceColor === targetColor) {
-          setSelectedPiece([row, col]);
-          calculatePossibleMoves(row, col);
-          return;
-         }
+
+      // If clicking another of your own pieces, switch selection
+      if (clickedPieceColor === turn) {
+        setSelectedPiece([row, col]);
+        calculatePossibleMoves(row, col);
+        return;
       }
       
-      if (piece && isValidMove(board, startRow, startCol, row, col)) {
+      // Attempt to move
+      if (isValidMove(board, startRow, startCol, row, col)) {
         const newBoard = board.map((r) => [...r]);
-        newBoard[row][col] = piece;
+        newBoard[row][col] = newBoard[startRow][startCol];
         newBoard[startRow][startCol] = null;
         setBoard(newBoard);
         setSelectedPiece(null);
         setPossibleMoves([]);
+        setTurn('black'); // Switch turn to AI
       } else {
+        // Invalid move, deselect
         setSelectedPiece(null); 
         setPossibleMoves([]);
       }
-    } else if (board[row][col]) {
+    } else if (clickedPiece && clickedPieceColor === turn) {
+      // Select a piece if it's the current player's turn
       setSelectedPiece([row, col]);
       calculatePossibleMoves(row, col);
     }
@@ -236,7 +295,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false })
                   'flex items-center justify-center cursor-pointer relative',
                   isLight ? 'bg-secondary' : 'bg-primary/50',
                   isSelected && 'bg-accent/50 ring-2 ring-accent',
-                  !isStatic && 'hover:bg-accent/30'
+                  !isStatic && turn === 'white' && 'hover:bg-accent/30'
                 )}
               >
                 {isPossibleMove && (
