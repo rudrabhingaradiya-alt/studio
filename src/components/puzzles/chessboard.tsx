@@ -78,7 +78,7 @@ const findKing = (board: Board, color: PlayerTurn): [number, number] | null => {
 
 const isKingInCheck = (board: Board, kingColor: PlayerTurn): boolean => {
     const kingPos = findKing(board, kingColor);
-    if (!kingPos) return false; // Should not happen in a real game
+    if (!kingPos) return true; // King is captured, which is a form of check.
     const [kingRow, kingCol] = kingPos;
     const opponentColor = kingColor === 'white' ? 'black' : 'white';
     return isSquareAttacked(board, kingRow, kingCol, opponentColor);
@@ -216,6 +216,28 @@ const isValidMove = (board: Board, startRow: number, startCol: number, endRow: n
     return !isKingInCheck(newBoard, pieceColor);
 };
 
+const hasAnyValidMove = (board: Board, color: PlayerTurn) => {
+    for (let r1 = 0; r1 < 8; r1++) {
+        for (let c1 = 0; c1 < 8; c1++) {
+            if (getPieceColor(board[r1][c1]) === color) {
+                for (let r2 = 0; r2 < 8; r2++) {
+                    for (let c2 = 0; c2 < 8; c2++) {
+                        if (isValidMove(board, r1, c1, r2, c2)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+const pieceValues: { [key in Piece as string]: number } = {
+  k: 1000, q: 9, r: 5, b: 3, n: 3, p: 1,
+  K: 1000, Q: 9, R: 5, B: 3, N: 3, P: 1,
+};
+
 
 const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800 }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
@@ -225,32 +247,62 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
 
   const makeAIMove = (currentBoard: Board) => {
     const aiColor = 'black';
-    const allAIMoves: { start: [number, number]; end: [number, number] }[] = [];
+    const playerColor = 'white';
+    let bestMove: { start: [number, number]; end: [number, number] } | null = null;
+    let bestValue = -Infinity;
+    let allAIMoves: { start: [number, number]; end: [number, number] }[] = [];
 
     // Find all possible moves for the AI
     for (let r1 = 0; r1 < 8; r1++) {
-      for (let c1 = 0; c1 < 8; c1++) {
-        const piece = currentBoard[r1][c1];
-        if (piece && getPieceColor(piece) === aiColor) {
-          for (let r2 = 0; r2 < 8; r2++) {
-            for (let c2 = 0; c2 < 8; c2++) {
-              if (isValidMove(currentBoard, r1, c1, r2, c2)) {
-                allAIMoves.push({ start: [r1, c1], end: [r2, c2] });
-              }
+        for (let c1 = 0; c1 < 8; c1++) {
+            const piece = currentBoard[r1][c1];
+            if (piece && getPieceColor(piece) === aiColor) {
+                for (let r2 = 0; r2 < 8; r2++) {
+                    for (let c2 = 0; c2 < 8; c2++) {
+                        if (isValidMove(currentBoard, r1, c1, r2, c2)) {
+                            allAIMoves.push({ start: [r1, c1], end: [r2, c2] });
+
+                            const newBoard = currentBoard.map(r => [...r]);
+                            newBoard[r2][c2] = newBoard[r1][c1];
+                            newBoard[r1][c1] = null;
+                            
+                            let moveValue = 0;
+                            const capturedPiece = currentBoard[r2][c2];
+                            if (capturedPiece) {
+                                moveValue += pieceValues[capturedPiece] || 0;
+                            }
+                            
+                            if (isKingInCheck(newBoard, playerColor)) {
+                                // If player has no valid moves, it's checkmate
+                                if (!hasAnyValidMove(newBoard, playerColor)) {
+                                    moveValue += 10000; // Checkmate is the highest priority
+                                } else {
+                                    moveValue += 0.5; // Give a small bonus for a check
+                                }
+                            }
+
+                            if (moveValue > bestValue) {
+                                bestValue = moveValue;
+                                bestMove = { start: [r1, c1], end: [r2, c2] };
+                            }
+                        }
+                    }
+                }
             }
-          }
         }
+    }
+
+    if (!bestMove) {
+      if (allAIMoves.length > 0) {
+        // If no move has a positive value (e.g., no captures or checks), pick a random one
+        bestMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
+      } else {
+        console.log('Checkmate or stalemate!');
+        return;
       }
     }
 
-    if (allAIMoves.length === 0) {
-      console.log('Checkmate or stalemate!');
-      return;
-    }
-
-    // Select a random move
-    const randomMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
-    const { start, end } = randomMove;
+    const { start, end } = bestMove;
     const [startRow, startCol] = start;
     const [endRow, endCol] = end;
 
@@ -269,7 +321,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       const thinkTime = 500 + Math.random() * 500;
       setTimeout(() => makeAIMove(board), thinkTime);
     }
-  }, [turn, board, isStatic, makeAIMove]);
+  }, [turn, board, isStatic]);
 
 
   const handleSquareClick = (row: number, col: number) => {
@@ -300,6 +352,12 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
         const newBoard = board.map((r) => [...r]);
         newBoard[row][col] = newBoard[startRow][startCol];
         newBoard[startRow][startCol] = null;
+        
+        // Pawn promotion (simple version: always to Queen)
+        if (newBoard[row][col]?.toLowerCase() === 'p' && (row === 0 || row === 7)) {
+            newBoard[row][col] = getPieceColor(newBoard[row][col]) === 'white' ? 'Q' : 'q';
+        }
+
         setBoard(newBoard);
         setSelectedPiece(null);
         setPossibleMoves([]);
@@ -355,10 +413,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                   !isStatic && turn === 'white' && 'hover:bg-accent/30'
                 )}
               >
-                {isPossibleMove && !isWhitePiece(board[rowIndex][colIndex]) && (
+                {isPossibleMove && !board[rowIndex][colIndex] && (
                   <div className="absolute h-1/3 w-1/3 rounded-full bg-black/20" />
                 )}
-                 {isPossibleMove && isWhitePiece(board[rowIndex][colIndex]) && (
+                 {isPossibleMove && board[rowIndex][colIndex] && (
                   <div className="absolute h-[90%] w-[90%] rounded-full border-4 border-black/20" />
                 )}
                 <span className="text-4xl md:text-5xl relative" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
@@ -390,3 +448,5 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
 };
 
 export default Chessboard;
+
+    
