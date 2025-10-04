@@ -48,15 +48,21 @@ const gameModes: {
 
 const robotLevels: RobotLevel[] = [
   { name: "Newcomer", rating: 200, description: "Just learning the moves." },
+  { name: "Rookie", rating: 250, description: "Knows how the pieces move." },
   { name: "Beginner", rating: 400, description: "Understands basic strategy." },
   { name: "Novice", rating: 600, description: "Starts to see simple tactics." },
   { name: "Intermediate", rating: 800, description: "Avoids basic blunders." },
+  { name: "Adept", rating: 950, description: "Can execute simple combinations." },
   { name: "Experienced", rating: 1000, description: "A solid, casual player." },
+  { name: "Talented", rating: 1100, description: "Developing tactical vision." },
   { name: "Skilled", rating: 1200, description: "Thinks a few moves ahead." },
+  { name: "Advanced", rating: 1350, description: "Positional play awareness." },
   { name: "Expert", rating: 1500, description: "Strong tactical awareness." },
   { name: "Master", rating: 2000, description: "Deep strategic understanding." },
   { name: "Grandmaster", rating: 2500, description: "World-class performance." },
+  { name: "Elite", rating: 2750, description: "Near-perfect tactical play." },
   { name: "Super Grandmaster", rating: 2800, description: "The pinnacle of chess skill." },
+  { name: "Titan", rating: 2900, description: "Legendary-tier AI opponent." },
   { name: "Stockfish", rating: 3200, description: "The strongest chess engine." },
 ];
 
