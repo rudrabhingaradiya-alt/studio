@@ -16,7 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, Loader2, Star, History } from 'lucide-react';
+import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -76,6 +76,12 @@ export default function ProfilePage() {
     }
   }
 
+  const userStats = {
+    rating: 1200,
+    wins: mockGameHistory.filter(g => g.result === 'Win').length,
+    losses: mockGameHistory.filter(g => g.result === 'Loss').length,
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8 flex flex-col items-center gap-4 sm:flex-row">
@@ -88,10 +94,43 @@ export default function ProfilePage() {
             Guest User
           </h1>
           <p className="text-center text-muted-foreground sm:text-left">
-            Rating: 1200
+            Joined July 2024
           </p>
         </div>
       </header>
+
+      <div className="mb-8 grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Rating</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{userStats.rating}</div>
+            <p className="text-xs text-muted-foreground">+20.1 from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Wins</CardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{userStats.wins}</div>
+            <p className="text-xs text-muted-foreground">Total games won</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Losses</CardTitle>
+            <ShieldAlert className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{userStats.losses}</div>
+            <p className="text-xs text-muted-foreground">Total games lost</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="mb-8">
         <Card>
