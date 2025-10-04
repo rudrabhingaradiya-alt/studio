@@ -68,8 +68,8 @@ const robotLevels: RobotLevel[] = [
 
 const RobotSelection = ({ onSelect, onBack }: { onSelect: (level: RobotLevel) => void, onBack: () => void }) => (
   <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
-    <div className="mx-auto max-w-3xl text-center">
-      <Button variant="ghost" onClick={onBack} className="absolute top-4 left-4 md:top-8 md:left-8">
+    <div className="relative mx-auto max-w-3xl text-center">
+      <Button variant="ghost" onClick={onBack} className="absolute top-0 left-0 -translate-y-1/2">
         <ChevronLeft className="h-5 w-5 mr-2" />
         Back
       </Button>
