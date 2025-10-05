@@ -27,15 +27,34 @@ export default function RootLayout({
     setIsMounted(true);
   }, []);
   
-  const showHeaderFooter = !pathname.startsWith('/play/') || pathname === '/play';
+  const isGamePage = pathname.startsWith('/play/') && pathname !== '/play/friend';
+  const showHeaderFooter = !isGamePage || pathname === '/play';
 
   if (!isMounted) {
     return (
       <html lang="en" suppressHydrationWarning>
-        <body></body>
+        <head>
+          <title>Chess Arena</title>
+          <meta name="description" content="Play, Challenge, and Conquer the Board" />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+          />
+        </head>
+        <body className="font-body antialiased">
+            <div className="flex min-h-screen flex-col">
+              <main className="flex-grow">{children}</main>
+            </div>
+        </body>
       </html>
     );
   }
+  
+  const isPlayPage = pathname.startsWith('/play');
+  const dynamicGamePath = isPlayPage && (pathname.split('/').length > 2 && pathname !== '/play/friend');
+
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -52,9 +71,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <ThemeProvider>
           <div className="flex min-h-screen flex-col">
-            {showHeaderFooter && <Header />}
+            {!dynamicGamePath && <Header />}
             <main className="flex-grow">{children}</main>
-            {showHeaderFooter && <Footer />}
+            {!dynamicGamePath && <Footer />}
           </div>
           <Toaster />
         </ThemeProvider>
@@ -62,5 +81,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    

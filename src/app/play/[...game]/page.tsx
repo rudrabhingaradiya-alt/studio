@@ -373,17 +373,21 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
 export default function PlayPage() {
   const router = useRouter();
   const params = useParams();
-
-  const [mode, setMode] = useState<GameMode | 'setup-bot' | null>(null);
+  
+  // 'select', 'setup-bot', 'play-bot', 'lobby-friend', 'play-friend'
+  const [view, setView] = useState<'select' | 'setup-bot' | 'play-bot' | 'lobby-friend'>('select');
   const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   
   useEffect(() => {
     const gameParam = params.game?.[0];
     if (gameParam && gameParam.startsWith('game_')) {
-      setMode('friend');
+      // This is for joining a friend's game, can be implemented later
+      // For now, it just shows the lobby screen if you land here directly
+      setView('lobby-friend');
     } else {
-      setMode(null);
+      // Reset to selection screen if URL is just /play
+      setView('select');
       setBotGameConfig(null);
       setGameResult(null);
     }
@@ -391,42 +395,48 @@ export default function PlayPage() {
 
   const handleModeSelect = (selectedMode: GameMode) => {
     if (selectedMode === 'bot') {
-      setMode('setup-bot');
+      setView('setup-bot');
     } else if (selectedMode === 'friend') {
-      setMode('friend');
-      router.push('/play/friend');
+      setView('lobby-friend');
+      router.push('/play/friend', { scroll: false });
     }
   };
   
   const handleBotGameStart = (config: BotGameConfig) => {
     setBotGameConfig(config);
-    setMode('bot');
+    setGameResult(null);
+    setView('play-bot');
   }
 
   const handleBackToModeSelection = () => {
-    setMode(null);
+    setView('select');
     setBotGameConfig(null);
     setGameResult(null);
-    router.push('/play');
+    router.push('/play', { scroll: false });
+  }
+
+  const handleRematch = () => {
+    setGameResult(null);
+    // The key on the Chessboard component handles the reset
   }
   
-  if (mode === 'bot' && botGameConfig) {
+  if (view === 'play-bot' && botGameConfig) {
     return (
       <BotGameScreen 
         config={botGameConfig}
         onExit={handleBackToModeSelection}
         gameResult={gameResult}
         onGameOver={setGameResult}
-        onRematch={() => setGameResult(null)}
+        onRematch={handleRematch}
       />
     );
   }
   
-  if (mode === 'setup-bot') {
+  if (view === 'setup-bot') {
     return <BotGameSetup onStart={handleBotGameStart} onBack={handleBackToModeSelection} />;
   }
   
-  if (mode === 'friend') {
+  if (view === 'lobby-friend') {
     return <FriendLobby onBack={handleBackToModeSelection} />;
   }
 
@@ -470,5 +480,3 @@ export default function PlayPage() {
     </div>
   );
 }
-
-    
