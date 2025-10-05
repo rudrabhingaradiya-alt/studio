@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert } from 'lucide-react';
+import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -29,6 +29,9 @@ import {
 } from '@/components/ui/dialog';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 
 const mockPuzzleHistory: PuzzleHistoryItem[] = [
   { puzzleId: 'pz301', attempts: 1, solved: true },
@@ -46,7 +49,17 @@ export default function ProfilePage() {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLogo, setSelectedLogo] = useState('https://picsum.photos/seed/user/200/200');
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   const handleGetRecommendations = async () => {
     setIsLoading(true);
@@ -212,45 +225,107 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Settings</CardTitle>
+              <CardDescription>
+                Manage your account and application settings.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <h3 className="text-lg font-semibold">Customize Your Logo</h3>
-              <p className="text-muted-foreground">
-                Use AI to generate a unique logo for your profile.
-              </p>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="mt-4" variant="outline">
-                    <BrainCircuit className="mr-2 h-4 w-4" />
-                    Generate with AI
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Choose your AI-Generated Logo</DialogTitle>
-                    <DialogDescription>
-                      Select one of the logos below to update your profile avatar.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4 py-4">
-                    {PlaceHolderImages.map((img) => (
-                      <div key={img.id} className="group relative cursor-pointer" onClick={() => setSelectedLogo(img.imageUrl)}>
-                        <Image
-                          src={img.imageUrl}
-                          alt={img.description}
-                          width={200}
-                          height={200}
-                          className="rounded-lg transition-all group-hover:scale-105"
-                          data-ai-hint={img.imageHint}
-                        />
-                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                          <Star className="h-8 w-8 text-yellow-400" />
+            <CardContent className="space-y-8">
+              <section>
+                <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                  <User className="h-5 w-5" />
+                  Account
+                </h3>
+                <div className="space-y-4">
+                    <h4 className="text-md font-semibold">Customize Your Logo</h4>
+                    <p className="text-muted-foreground text-sm">
+                      Use AI to generate a unique logo for your profile.
+                    </p>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">
+                          <BrainCircuit className="mr-2 h-4 w-4" />
+                          Generate with AI
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Choose your AI-Generated Logo</DialogTitle>
+                          <DialogDescription>
+                            Select one of the logos below to update your profile avatar.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                          {PlaceHolderImages.map((img) => (
+                            <div key={img.id} className="group relative cursor-pointer" onClick={() => setSelectedLogo(img.imageUrl)}>
+                              <Image
+                                src={img.imageUrl}
+                                alt={img.description}
+                                width={200}
+                                height={200}
+                                className="rounded-lg transition-all group-hover:scale-105"
+                                data-ai-hint={img.imageHint}
+                              />
+                               <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                <Star className="h-8 w-8 text-yellow-400" />
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      </DialogContent>
+                    </Dialog>
+                </div>
+              </section>
+
+              <Separator />
+
+              <section>
+                <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                  <Palette className="h-5 w-5" />
+                  Theme
+                </h3>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <Label htmlFor="dark-mode" className="text-base">Dark Mode</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Toggle between light and dark themes.
+                    </p>
                   </div>
-                </DialogContent>
-              </Dialog>
+                  <Switch
+                    id="dark-mode"
+                    checked={isDarkMode}
+                    onCheckedChange={setIsDarkMode}
+                  />
+                </div>
+              </section>
+
+              <Separator />
+
+              <section>
+                 <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                  <Bell className="h-5 w-5" />
+                  Notifications
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <Label htmlFor="game-updates" className="text-base">Game Updates</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receive notifications for game events.
+                      </p>
+                    </div>
+                    <Switch id="game-updates" disabled />
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <Label htmlFor="new-challenges" className="text-base">New Challenges</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when a friend challenges you.
+                      </p>
+                    </div>
+                    <Switch id="new-challenges" disabled />
+                  </div>
+                </div>
+              </section>
             </CardContent>
           </Card>
         </TabsContent>
