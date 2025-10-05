@@ -22,8 +22,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-type GameMode = 'robot' | 'online' | 'friend';
-type RobotLevel = {
+type GameMode = 'bot' | 'online' | 'friend';
+type BotLevel = {
   name: string;
   rating: number;
   description: string;
@@ -44,8 +44,8 @@ const gameModes: {
     isAvailable: false,
   },
   {
-    id: 'robot',
-    title: 'Play vs Robot',
+    id: 'bot',
+    title: 'Play vs Bot',
     description: 'Test your skills against our AI challenger.',
     icon: BrainCircuit,
     isAvailable: true,
@@ -59,7 +59,7 @@ const gameModes: {
   },
 ];
 
-const robotLevels: RobotLevel[] = [
+const botLevels: BotLevel[] = [
   { name: "Newcomer", rating: 200, description: "Just learning the moves." },
   { name: "Rookie", rating: 250, description: "Knows how the pieces move." },
   { name: "Beginner", rating: 400, description: "Understands basic strategy." },
@@ -79,7 +79,7 @@ const robotLevels: RobotLevel[] = [
   { name: "Stockfish", rating: 3200, description: "The strongest chess engine." },
 ];
 
-const RobotSelection = ({ onSelect, onBack }: { onSelect: (level: RobotLevel) => void, onBack: () => void }) => (
+const BotSelection = ({ onSelect, onBack }: { onSelect: (level: BotLevel) => void, onBack: () => void }) => (
   <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
     <div className="relative mx-auto max-w-3xl text-center">
       <Button variant="ghost" onClick={onBack} className="absolute top-0 left-0 -translate-y-1/2">
@@ -90,12 +90,12 @@ const RobotSelection = ({ onSelect, onBack }: { onSelect: (level: RobotLevel) =>
         Choose Your Opponent
       </h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        Select a robot to match your skill level.
+        Select a bot to match your skill level.
       </p>
     </div>
     <ScrollArea className="mt-12 mx-auto max-w-4xl h-[calc(100vh-22rem)]">
       <div className="grid gap-4 p-1">
-        {robotLevels.map((level) => (
+        {botLevels.map((level) => (
           <Card
             key={level.rating}
             onClick={() => onSelect(level)}
@@ -264,13 +264,13 @@ const LeaveGameDialog = ({
 export default function PlayPage() {
   const [gameState, setGameState] = useState<{
     mode: GameMode | null;
-    robotLevel: RobotLevel | null;
+    botLevel: BotLevel | null;
     gameResult: GameResult | null;
     rematchCounter: number;
     showLeaveConfirm: boolean;
   }>({
     mode: null,
-    robotLevel: null,
+    botLevel: null,
     gameResult: null,
     rematchCounter: 0,
     showLeaveConfirm: false,
@@ -283,8 +283,8 @@ export default function PlayPage() {
     }
   };
   
-  const handleRobotSelect = (level: RobotLevel) => {
-    setGameState(prev => ({ ...prev, robotLevel: level, gameResult: null, rematchCounter: 0 }));
+  const handleBotSelect = (level: BotLevel) => {
+    setGameState(prev => ({ ...prev, botLevel: level, gameResult: null, rematchCounter: 0 }));
   }
 
   const handleGameOver = (result: GameResult) => {
@@ -302,19 +302,19 @@ export default function PlayPage() {
   const handleBackToMenu = () => {
     setGameState({
       mode: null,
-      robotLevel: null,
+      botLevel: null,
       gameResult: null,
       rematchCounter: 0,
       showLeaveConfirm: false,
     });
   }
   
-  const handleBackToRobotSelection = () => {
-    setGameState(prev => ({ ...prev, robotLevel: null, gameResult: null }));
+  const handleBackToBotSelection = () => {
+    setGameState(prev => ({ ...prev, botLevel: null, gameResult: null }));
   }
   
   const handleBackToModeSelection = () => {
-    setGameState(prev => ({ ...prev, mode: null, robotLevel: null, gameResult: null }));
+    setGameState(prev => ({ ...prev, mode: null, botLevel: null, gameResult: null }));
   }
 
   const handleRequestLeave = () => {
@@ -326,21 +326,21 @@ export default function PlayPage() {
   }
   
   const handleConfirmLeave = () => {
-    setGameState(prev => ({ ...prev, robotLevel: null, gameResult: null, showLeaveConfirm: false }));
+    setGameState(prev => ({ ...prev, botLevel: null, gameResult: null, showLeaveConfirm: false }));
   }
 
-  if (gameState.mode === 'robot') {
-    if (gameState.robotLevel) {
+  if (gameState.mode === 'bot') {
+    if (gameState.botLevel) {
       return (
         <div className="container mx-auto px-4 py-8 md:py-12">
            <Button variant="ghost" onClick={handleRequestLeave} className="mb-4">
             <ChevronLeft className="h-5 w-5 mr-2" />
-            Back to robot selection
+            Back to bot selection
           </Button>
           <div className="flex justify-center">
             <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
               <CardHeader className="text-center">
-                <CardTitle>vs. {gameState.robotLevel.name} ({gameState.robotLevel.rating})</CardTitle>
+                <CardTitle>vs. {gameState.botLevel.name} ({gameState.botLevel.rating})</CardTitle>
                 <CardDescription>
                   You are playing against the AI. It's your move.
                 </CardDescription>
@@ -348,7 +348,7 @@ export default function PlayPage() {
               <CardContent>
                 <Chessboard
                   key={gameState.rematchCounter}
-                  aiLevel={gameState.robotLevel.rating}
+                  aiLevel={gameState.botLevel.rating}
                   onGameOver={handleGameOver}
                 />
               </CardContent>
@@ -367,7 +367,7 @@ export default function PlayPage() {
         </div>
       );
     }
-    return <RobotSelection onSelect={handleRobotSelect} onBack={handleBackToModeSelection} />;
+    return <BotSelection onSelect={handleBotSelect} onBack={handleBackToModeSelection} />;
   }
   
   if (gameState.mode === 'friend') {

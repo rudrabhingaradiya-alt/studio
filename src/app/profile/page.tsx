@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -36,9 +37,9 @@ const mockPuzzleHistory: PuzzleHistoryItem[] = [
 ];
 
 const mockGameHistory: GameHistoryItem[] = [
-    { opponent: 'Robot (Beginner)', result: 'Win', date: '2024-07-28' },
-    { opponent: 'Robot (Intermediate)', result: 'Loss', date: '2024-07-27' },
-    { opponent: 'Robot (Adept)', result: 'Draw', date: '2024-07-26' },
+    { opponent: 'Bot (Beginner)', result: 'Win', date: '2024-07-28' },
+    { opponent: 'Bot (Intermediate)', result: 'Loss', date: '2024-07-27' },
+    { opponent: 'Bot (Adept)', result: 'Draw', date: '2024-07-26' },
 ];
 
 export default function ProfilePage() {
