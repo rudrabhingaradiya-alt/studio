@@ -1,7 +1,11 @@
 import type {Config} from 'tailwindcss';
+import { boardThemes } from './src/lib/board-themes';
+
+const boardThemeClasses = boardThemes.flatMap(theme => [theme.light, theme.dark]);
 
 export default {
   darkMode: ['class'],
+  safelist: boardThemeClasses,
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',

@@ -18,3 +18,10 @@ export const boardThemes: BoardTheme[] = [
   { id: 'ice', name: 'Ice', light: 'bg-cyan-200', dark: 'bg-blue-800' },
   { id: 'cherry', name: 'Cherry', light: 'bg-red-200', dark: 'bg-red-700' },
 ];
+
+// This is a safelist for Tailwind CSS to ensure the classes are not purged.
+// It is extracted from the boardThemes array.
+// bg-amber-200 bg-amber-600 bg-emerald-200 bg-emerald-600 bg-sky-200 bg-sky-600
+// bg-yellow-200 bg-yellow-700 bg-slate-300 bg-slate-500 bg-rose-200 bg-rose-500
+// bg-orange-100 bg-orange-300 bg-lime-300 bg-green-800 bg-cyan-200 bg-blue-800
+// bg-red-200 bg-red-700
