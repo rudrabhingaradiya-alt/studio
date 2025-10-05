@@ -374,65 +374,55 @@ export default function PlayPage() {
   const router = useRouter();
   const params = useParams();
 
-  const [mode, setMode] = useState<GameMode | null>(null);
+  const [mode, setMode] = useState<GameMode | 'setup-bot' | null>(null);
   const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
-  const [hasCheckedParams, setHasCheckedParams] = useState(false);
-
+  
   useEffect(() => {
     const gameParam = params.game?.[0];
-    
-    if (gameParam === 'bot') {
-      const configStr = localStorage.getItem('botGameConfig');
-      if (configStr) {
-        setBotGameConfig(JSON.parse(configStr));
-        setMode('bot');
-      } else {
-        router.push('/play');
-      }
-    } else if (gameParam) {
+    if (gameParam && gameParam.startsWith('game_')) {
       setMode('friend');
     } else {
       setMode(null);
       setBotGameConfig(null);
       setGameResult(null);
     }
-    setHasCheckedParams(true);
-  }, [params.game, router]);
+  }, [params.game]);
 
   const handleModeSelect = (selectedMode: GameMode) => {
     if (selectedMode === 'bot') {
-      setMode('bot');
+      setMode('setup-bot');
     } else if (selectedMode === 'friend') {
       setMode('friend');
+      router.push('/play/friend');
     }
   };
   
   const handleBotGameStart = (config: BotGameConfig) => {
-    localStorage.setItem('botGameConfig', JSON.stringify(config));
-    router.push('/play/bot');
+    setBotGameConfig(config);
+    setMode('bot');
   }
 
   const handleBackToModeSelection = () => {
+    setMode(null);
+    setBotGameConfig(null);
+    setGameResult(null);
     router.push('/play');
   }
   
-  if (!hasCheckedParams) {
-    return null; // or a loading spinner
+  if (mode === 'bot' && botGameConfig) {
+    return (
+      <BotGameScreen 
+        config={botGameConfig}
+        onExit={handleBackToModeSelection}
+        gameResult={gameResult}
+        onGameOver={setGameResult}
+        onRematch={() => setGameResult(null)}
+      />
+    );
   }
-
-  if (mode === 'bot') {
-    if (botGameConfig) {
-      return (
-        <BotGameScreen 
-          config={botGameConfig}
-          onExit={handleBackToModeSelection}
-          gameResult={gameResult}
-          onGameOver={setGameResult}
-          onRematch={() => setGameResult(null)}
-        />
-      );
-    }
+  
+  if (mode === 'setup-bot') {
     return <BotGameSetup onStart={handleBotGameStart} onBack={handleBackToModeSelection} />;
   }
   
