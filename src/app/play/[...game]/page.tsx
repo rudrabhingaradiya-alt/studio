@@ -315,7 +315,6 @@ interface BotGameConfig {
 
 const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { config: BotGameConfig, onExit: () => void, onRematch: () => void, gameResult: GameResult | null, onGameOver: (result: GameResult) => void }) => {
     const { boardTheme } = useTheme();
-    const router = useRouter();
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [rematchCounter, setRematchCounter] = useState(0);
 
@@ -378,9 +377,11 @@ export default function PlayPage() {
   const [mode, setMode] = useState<GameMode | null>(null);
   const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
+  const [hasCheckedParams, setHasCheckedParams] = useState(false);
 
   useEffect(() => {
     const gameParam = params.game?.[0];
+    
     if (gameParam === 'bot') {
       const configStr = localStorage.getItem('botGameConfig');
       if (configStr) {
@@ -390,18 +391,20 @@ export default function PlayPage() {
         router.push('/play');
       }
     } else if (gameParam) {
-      // Logic for 'friend' or other modes can go here
+      setMode('friend');
     } else {
-        setMode(null);
-        setBotGameConfig(null);
-        setGameResult(null);
+      setMode(null);
+      setBotGameConfig(null);
+      setGameResult(null);
     }
+    setHasCheckedParams(true);
   }, [params.game, router]);
 
   const handleModeSelect = (selectedMode: GameMode) => {
-    const gameMode = gameModes.find((m) => m.id === selectedMode);
-    if (gameMode && gameMode.isAvailable) {
-      setMode(selectedMode);
+    if (selectedMode === 'bot') {
+      setMode('bot');
+    } else if (selectedMode === 'friend') {
+      setMode('friend');
     }
   };
   
@@ -411,9 +414,11 @@ export default function PlayPage() {
   }
 
   const handleBackToModeSelection = () => {
-    setMode(null);
-    setBotGameConfig(null);
     router.push('/play');
+  }
+  
+  if (!hasCheckedParams) {
+    return null; // or a loading spinner
   }
 
   if (mode === 'bot') {
@@ -450,7 +455,7 @@ export default function PlayPage() {
         {gameModes.map((mode) => (
           <Card
             key={mode.id}
-            onClick={() => handleModeSelect(mode.id)}
+            onClick={() => mode.isAvailable && handleModeSelect(mode.id)}
             className={`flex flex-col text-center transition-all ${
               mode.isAvailable
                 ? 'cursor-pointer hover:border-primary hover:shadow-lg'
@@ -475,5 +480,3 @@ export default function PlayPage() {
     </div>
   );
 }
-
-    
