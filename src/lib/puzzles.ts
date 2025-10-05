@@ -60,3 +60,5 @@ export const puzzles: Puzzle[] = [
     theme: 'Queen Endgame',
   },
 ];
+
+    
