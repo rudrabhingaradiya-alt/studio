@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -26,77 +27,16 @@ const navLinks = [
   { href: '/puzzles', label: 'Puzzles' },
 ];
 
-const UserDropdown = () => {
-  // TODO: Replace with real authentication check
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <User className="h-5 w-5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {isLoggedIn ? 'Player One' : 'Guest'}
-            </p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {isLoggedIn
-                ? 'player.one@chessarena.com'
-                : 'guest@chessarena.com'}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {isLoggedIn ? (
-          <>
-            <DropdownMenuItem asChild>
-              <Link href="/profile">Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <button
-                onClick={() => setIsLoggedIn(false)}
-                className="w-full text-left"
-              >
-                Log out
-              </button>
-            </DropdownMenuItem>
-          </>
-        ) : (
-          <DropdownMenuItem asChild>
-            <button
-              onClick={() => setIsLoggedIn(true)}
-              className="w-full text-left"
-            >
-              Log in
-            </button>
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
 const Header = () => {
-  // Note: isLoggedIn state is now managed inside UserDropdown to prevent hydration errors.
-  // For the purpose of showing/hiding nav links, we'll use a separate state here.
-  // In a real app, this would be derived from a global auth context.
-  const [isNavVisible, setIsNavVisible] = useState(false); 
+  const [isNavVisible, setIsNavVisible] = useState(false);
 
-  // A simple effect to simulate login state change for nav visibility.
-  // This is a temporary solution for the prototype.
   const handleLoginForNav = (status: boolean) => {
     setIsNavVisible(status);
-  }
+  };
 
-  // We'll wrap the DropdownMenu to intercept the login/logout clicks
-  // This is a workaround for the prototype. In a real app, use a global state manager (Context, Redux, etc).
   const PatchedUserDropdown = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
+
     const handleLogin = () => {
       setIsLoggedIn(true);
       handleLoginForNav(true);
@@ -133,40 +73,24 @@ const Header = () => {
               <DropdownMenuItem asChild>
                 <Link href="/profile">Profile</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left"
-                >
-                  Log out
-                </button>
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
             </>
           ) : (
-            <DropdownMenuItem asChild>
-              <button
-                onClick={handleLogin}
-                className="w-full text-left"
-              >
-                Log in
-              </button>
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogin}>Log in</DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
     );
-  }
-
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
+        {/* Desktop Navigation */}
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Logo className="h-6 w-6" />
-            <span className="hidden font-bold sm:inline-block">
-              Chess Arena
-            </span>
+            <span className="font-bold">Chess Arena</span>
           </Link>
           {isNavVisible && (
             <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -183,9 +107,9 @@ const Header = () => {
           )}
         </div>
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="md:hidden">
-            <Sheet>
+        {/* Mobile Navigation */}
+        <div className="flex w-full items-center justify-between md:hidden">
+           <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
@@ -214,14 +138,18 @@ const Header = () => {
                 </div>
               </SheetContent>
             </Sheet>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center space-x-2 md:hidden">
-              <Logo className="h-6 w-6" />
-              <span className="font-bold">Chess Arena</span>
-            </Link>
-            <PatchedUserDropdown />
-          </div>
+          
+          <Link href="/" className="flex items-center space-x-2">
+            <Logo className="h-6 w-6" />
+            <span className="font-bold">Chess Arena</span>
+          </Link>
+
+          <PatchedUserDropdown />
+        </div>
+
+        {/* Desktop User Menu */}
+        <div className="hidden flex-1 items-center justify-end md:flex">
+          <PatchedUserDropdown />
         </div>
       </div>
     </header>
