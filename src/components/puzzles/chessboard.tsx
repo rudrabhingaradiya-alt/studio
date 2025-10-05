@@ -238,6 +238,56 @@ const pieceValues: { [key in Piece as string]: number } = {
   K: 1000, Q: 9, R: 5, B: 3, N: 3, P: 1,
 };
 
+// Simplified piece-square tables for positional value.
+// Higher values are better positions. (for black)
+const pawnPos = [
+    [0,  0,  0,  0,  0,  0,  0,  0],
+    [5,  5,  5,  5,  5,  5,  5,  5],
+    [1,  1,  2,  3,  3,  2,  1,  1],
+    [0.5,0.5,1,  2.5,2.5,1,  0.5,0.5],
+    [0,  0,  0,  2,  2,  0,  0,  0],
+    [0.5,-0.5,-1,0,  0,-1, -0.5,0.5],
+    [0.5,1,  1,-2,-2,  1,  1,  0.5],
+    [0,  0,  0,  0,  0,  0,  0,  0]
+].reverse(); // Reverse for black pieces
+
+const knightPos = [
+    [-5, -4, -3, -3, -3, -3, -4, -5],
+    [-4, -2,  0,  0,  0,  0, -2, -4],
+    [-3,  0,  1,1.5,1.5,  1,  0, -3],
+    [-3,0.5,1.5,  2,  2,1.5,0.5, -3],
+    [-3,  0,1.5,  2,  2,1.5,  0, -3],
+    [-3,0.5,  1,1.5,1.5,  1,0.5, -3],
+    [-4, -2,  0,0.5,0.5,  0, -2, -4],
+    [-5, -4, -3, -3, -3, -3, -4, -5]
+].reverse();
+
+const bishopPos = [
+    [-2,-1,-1,-1,-1,-1,-1,-2],
+    [-1, 0, 0, 0, 0, 0, 0,-1],
+    [-1, 0,0.5, 1, 1,0.5, 0,-1],
+    [-1,0.5,0.5,1, 1,0.5,0.5,-1],
+    [-1, 0, 1, 1, 1, 1, 0,-1],
+    [-1, 1, 1, 1, 1, 1, 1,-1],
+    [-1,0.5,0, 0, 0, 0,0.5,-1],
+    [-2,-1,-1,-1,-1,-1,-1,-2]
+].reverse();
+
+
+const getPositionalValue = (piece: Piece, row: number, col: number) => {
+    if (!piece) return 0;
+    const pieceType = piece.toLowerCase();
+    switch (pieceType) {
+        case 'p': return pawnPos[row][col];
+        case 'n': return knightPos[row][col];
+        case 'b': return bishopPos[row][col];
+        // Rook and Queen values are simpler, mainly about open files/ranks
+        case 'r': return (col === 3 || col === 4) ? 0.5 : 0;
+        case 'q': return 0;
+        default: return 0;
+    }
+}
+
 
 const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800 }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
@@ -271,6 +321,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                             if (capturedPiece) {
                                 moveValue += pieceValues[capturedPiece] || 0;
                             }
+
+                            // Add positional value
+                            moveValue += getPositionalValue(piece, r2, c2) - getPositionalValue(piece, r1, c1);
                             
                             if (isKingInCheck(newBoard, playerColor)) {
                                 // If player has no valid moves, it's checkmate
