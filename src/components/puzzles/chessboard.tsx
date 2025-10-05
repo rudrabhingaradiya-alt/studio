@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { type BoardTheme, boardThemes } from '@/lib/board-themes';
 
 type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | 'P' | null;
 export type Board = Piece[][];
@@ -43,6 +44,7 @@ interface ChessboardProps {
   aiLevel?: number;
   onGameOver?: (result: GameResult) => void;
   playerColor?: PlayerColor;
+  boardTheme?: string;
 }
 
 const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
@@ -296,7 +298,7 @@ const getPositionalValue = (piece: Piece, row: number, col: number) => {
 }
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800, onGameOver, playerColor: initialPlayerColor = 'white' }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800, onGameOver, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default' }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
@@ -304,6 +306,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
   const [isGameOver, setIsGameOver] = useState(false);
   const [playerColor, setPlayerColor] = useState<PlayerTurn>('white');
   const [aiColor, setAiColor] = useState<PlayerTurn>('black');
+  const [currentTheme, setCurrentTheme] = useState<BoardTheme | undefined>(boardThemes.find(t => t.id === boardThemeId));
+
+  useEffect(() => {
+    setCurrentTheme(boardThemes.find(t => t.id === boardThemeId));
+  }, [boardThemeId]);
 
   useEffect(() => {
     let chosenPlayerColor: PlayerTurn = 'white';
@@ -473,6 +480,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
   const files = playerColor === 'white' ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
   const ranks = playerColor === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
   const displayBoard = playerColor === 'white' ? board : board.map(row => row.slice().reverse()).reverse();
+  const theme = currentTheme || boardThemes[0];
+  const lightSquareClass = theme.light;
+  const darkSquareClass = theme.dark;
 
   return (
     <div className="relative aspect-square w-full max-w-lg mx-auto shadow-2xl rounded-lg overflow-hidden border-4 border-card">
@@ -495,7 +505,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                 onClick={() => handleSquareClick(originalRow, originalCol)}
                 className={cn(
                   'flex items-center justify-center relative',
-                  isLight ? 'bg-amber-200' : 'bg-amber-600',
+                  isLight ? lightSquareClass : darkSquareClass,
                   isSelected && 'bg-yellow-400/70 ring-2 ring-yellow-500',
                   !isStatic && turn === playerColor && !isGameOver && 'cursor-pointer hover:bg-yellow-400/50'
                 )}
@@ -506,9 +516,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                  {isPossibleMove && displayBoard[rowIndex][colIndex] && (
                   <div className="absolute h-[90%] w-[90%] rounded-full border-4 border-black/20" />
                 )}
-                <span className={cn("text-4xl md:text-5xl relative", {
-                    "text-stone-100 [text-shadow:_0_2px_2px_rgb(0_0_0_/_60%)]": pieceColor === 'white',
-                    "text-stone-800 [text-shadow:_0_2px_2px_rgb(255_255_255_/_20%)]": pieceColor === 'black',
+                <span className={cn("text-4xl md:text-5xl relative drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]", {
+                    "text-stone-100": pieceColor === 'white',
+                    "text-stone-800": pieceColor === 'black',
                 })}>
                   {piece && pieceToUnicode[piece]}
                 </span>
@@ -520,7 +530,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
        {/* Ranks */}
        {ranks.map((rank, i) => (
         <div key={rank} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{top: `${i * 12.5}%`}} className={cn("absolute text-xs font-bold text-amber-900/70", playerColor === 'white' ? 'left-0.5' : 'right-0.5' )}>
+            <span style={{top: `${i * 12.5}%`}} className={cn("absolute text-xs font-bold text-neutral-900/40", playerColor === 'white' ? 'left-0.5' : 'right-0.5' )}>
                 {rank}
             </span>
         </div>
@@ -528,7 +538,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       {/* Files */}
       {files.map((file, i) => (
         <div key={file} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{left: `${(i * 12.5) + (playerColor === 'white' ? 11 : 0)}%`}} className={cn("absolute text-xs font-bold text-amber-900/70", playerColor === 'white' ? 'bottom-0.5' : 'top-0.5')}>
+            <span style={{left: `${(i * 12.5) + (playerColor === 'white' ? 11 : 0)}%`}} className={cn("absolute text-xs font-bold text-neutral-900/40", playerColor === 'white' ? 'bottom-0.5' : 'top-0.5')}>
                 {file}
             </span>
         </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Chessboard from '@/components/puzzles/chessboard';
 import { getNextPuzzle } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/context/theme-context';
 
 // Mock data
 const mockGameHistory = [
@@ -22,6 +24,7 @@ export default function PuzzlesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PuzzleSelectionOutput | null>(null);
   const { toast } = useToast();
+  const { boardTheme } = useTheme();
 
   const handleGetPuzzle = async () => {
     setIsLoading(true);
@@ -77,7 +80,7 @@ export default function PuzzlesPage() {
             <CardContent>
               <p className="italic text-muted-foreground">"{result.reason}"</p>
               <div className="mt-4">
-                <Chessboard isStatic={true} />
+                <Chessboard isStatic={true} boardTheme={boardTheme} />
               </div>
             </CardContent>
             <CardFooter>

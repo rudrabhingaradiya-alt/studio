@@ -25,6 +25,7 @@ import { Slider } from '@/components/ui/slider';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTheme } from '@/context/theme-context';
 
 
 type GameMode = 'bot' | 'online' | 'friend';
@@ -314,6 +315,7 @@ interface BotGameConfig {
 }
 
 export default function PlayPage() {
+  const { boardTheme } = useTheme();
   const [gameState, setGameState] = useState<{
     mode: GameMode | null;
     botGameConfig: BotGameConfig | null;
@@ -422,6 +424,7 @@ export default function PlayPage() {
                   aiLevel={gameState.botGameConfig.rating}
                   onGameOver={handleGameOver}
                   playerColor={gameState.botGameConfig.color}
+                  boardTheme={boardTheme}
                 />
               </CardContent>
             </Card>

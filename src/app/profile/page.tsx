@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette } from 'lucide-react';
+import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -32,6 +32,9 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { useTheme } from '@/context/theme-context';
+import { boardThemes } from '@/lib/board-themes';
+import { cn } from '@/lib/utils';
 
 const mockPuzzleHistory: PuzzleHistoryItem[] = [
   { puzzleId: 'pz301', attempts: 1, solved: true },
@@ -49,17 +52,8 @@ export default function ProfilePage() {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLogo, setSelectedLogo] = useState('https://picsum.photos/seed/user/200/200');
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const { isDarkMode, setIsDarkMode, boardTheme, setBoardTheme } = useTheme();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   const handleGetRecommendations = async () => {
     setIsLoading(true);
@@ -281,20 +275,51 @@ export default function ProfilePage() {
               <section>
                 <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
                   <Palette className="h-5 w-5" />
-                  Theme
+                  Appearance
                 </h3>
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
-                    <Label htmlFor="dark-mode" className="text-base">Dark Mode</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Toggle between light and dark themes.
-                    </p>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <Label htmlFor="dark-mode" className="text-base">Dark Mode</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Toggle between light and dark themes.
+                      </p>
+                    </div>
+                    <Switch
+                      id="dark-mode"
+                      checked={isDarkMode}
+                      onCheckedChange={setIsDarkMode}
+                    />
                   </div>
-                  <Switch
-                    id="dark-mode"
-                    checked={isDarkMode}
-                    onCheckedChange={setIsDarkMode}
-                  />
+
+                  <div className="space-y-4">
+                    <Label className="text-base">Board Theme</Label>
+                     <p className="text-sm text-muted-foreground">
+                      Select your preferred chessboard color scheme.
+                    </p>
+                    <div className="grid grid-cols-5 gap-4">
+                      {boardThemes.map((theme) => (
+                        <div
+                          key={theme.id}
+                          className="flex flex-col items-center gap-2 cursor-pointer"
+                          onClick={() => setBoardTheme(theme.id)}
+                        >
+                          <div className={cn(
+                            "h-12 w-12 rounded-full flex items-center justify-center ring-2 ring-offset-2 ring-offset-background",
+                            boardTheme === theme.id ? "ring-primary" : "ring-transparent"
+                          )}>
+                            <div className="h-10 w-10 rounded-full overflow-hidden">
+                              <div className="h-full w-full flex">
+                                <div className={cn("w-1/2 h-full", theme.light)} />
+                                <div className={cn("w-1/2 h-full", theme.dark)} />
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs font-medium">{theme.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </section>
 
