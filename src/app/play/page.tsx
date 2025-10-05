@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, User, Users, ChevronLeft, Link as LinkIcon, Clipboard } from 'lucide-react';
+import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +36,7 @@ const gameModes: {
     id: 'robot',
     title: 'Play vs Robot',
     description: 'Test your skills against our AI challenger.',
-    icon: Bot,
+    icon: BrainCircuit,
     isAvailable: true,
   },
   {
@@ -92,7 +92,7 @@ const RobotSelection = ({ onSelect, onBack }: { onSelect: (level: RobotLevel) =>
           >
             <div className="flex items-center gap-4">
                <div className="rounded-full bg-primary/10 p-3 text-primary">
-                <Bot className="h-6 w-6" />
+                <BrainCircuit className="h-6 w-6" />
               </div>
               <div>
                 <CardTitle className="text-xl">{level.name}</CardTitle>
