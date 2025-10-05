@@ -1,12 +1,13 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 
 type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | 'P' | null;
-type Board = Piece[][];
+export type Board = Piece[][];
 type PlayerTurn = 'white' | 'black';
+export type GameResult = 'checkmate-white' | 'checkmate-black' | 'stalemate';
 
 const pieceToUnicode: { [key in Piece as string]: string } = {
   k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
@@ -39,6 +40,7 @@ interface ChessboardProps {
   initialBoard?: Board;
   isStatic?: boolean;
   aiLevel?: number;
+  onGameOver?: (result: GameResult) => void;
 }
 
 const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
@@ -49,41 +51,6 @@ const getPieceColor = (piece: Piece): PlayerTurn | null => {
     if (isBlackPiece(piece)) return 'black';
     return null;
 }
-
-const isSquareAttacked = (board: Board, row: number, col: number, attackerColor: PlayerTurn): boolean => {
-    for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-            const piece = board[r][c];
-            if (piece && getPieceColor(piece) === attackerColor) {
-                if (isMoveValidWithoutCheck(board, r, c, row, col)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-};
-
-const findKing = (board: Board, color: PlayerTurn): [number, number] | null => {
-    const kingPiece = color === 'white' ? 'K' : 'k';
-    for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-            if (board[r][c] === kingPiece) {
-                return [r, c];
-            }
-        }
-    }
-    return null;
-};
-
-const isKingInCheck = (board: Board, kingColor: PlayerTurn): boolean => {
-    const kingPos = findKing(board, kingColor);
-    if (!kingPos) return true; // King is captured, which is a form of check.
-    const [kingRow, kingCol] = kingPos;
-    const opponentColor = kingColor === 'white' ? 'black' : 'white';
-    return isSquareAttacked(board, kingRow, kingCol, opponentColor);
-};
-
 
 const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
   const piece = board[startRow][startCol];
@@ -196,6 +163,41 @@ const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: numbe
   }
 };
 
+const isSquareAttacked = (board: Board, row: number, col: number, attackerColor: PlayerTurn): boolean => {
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece && getPieceColor(piece) === attackerColor) {
+                if (isMoveValidWithoutCheck(board, r, c, row, col)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+};
+
+const findKing = (board: Board, color: PlayerTurn): [number, number] | null => {
+    const kingPiece = color === 'white' ? 'K' : 'k';
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (board[r][c] === kingPiece) {
+                return [r, c];
+            }
+        }
+    }
+    return null;
+};
+
+const isKingInCheck = (board: Board, kingColor: PlayerTurn): boolean => {
+    const kingPos = findKing(board, kingColor);
+    if (!kingPos) return true; // King is captured, game over.
+    const [kingRow, kingCol] = kingPos;
+    const opponentColor = kingColor === 'white' ? 'black' : 'white';
+    return isSquareAttacked(board, kingRow, kingCol, opponentColor);
+};
+
+
 const isValidMove = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
     if (!isMoveValidWithoutCheck(board, startRow, startCol, endRow, endCol)) {
         return false;
@@ -289,13 +291,27 @@ const getPositionalValue = (piece: Piece, row: number, col: number) => {
 }
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800 }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800, onGameOver }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
   const [turn, setTurn] = useState<PlayerTurn>('white');
+  const [isGameOver, setIsGameOver] = useState(false);
 
-  const makeAIMove = (currentBoard: Board) => {
+  const checkEndGame = useCallback((currentBoard: Board, nextTurn: PlayerTurn) => {
+    if (isGameOver) return;
+    
+    if (!hasAnyValidMove(currentBoard, nextTurn)) {
+        setIsGameOver(true);
+        if (isKingInCheck(currentBoard, nextTurn)) {
+            onGameOver?.(nextTurn === 'white' ? 'checkmate-black' : 'checkmate-white');
+        } else {
+            onGameOver?.('stalemate');
+        }
+    }
+  }, [isGameOver, onGameOver]);
+
+  const makeAIMove = useCallback((currentBoard: Board) => {
     const aiColor = 'black';
     const playerColor = 'white';
     let bestMove: { start: [number, number]; end: [number, number] } | null = null;
@@ -345,40 +361,38 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
         }
     }
 
-    if (!bestMove) {
-      if (allAIMoves.length > 0) {
-        // If no move has a positive value (e.g., no captures or checks), pick a random one
-        bestMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
-      } else {
-        console.log('Checkmate or stalemate!');
-        return;
-      }
+    if (!bestMove && allAIMoves.length > 0) {
+      bestMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
     }
 
-    const { start, end } = bestMove;
-    const [startRow, startCol] = start;
-    const [endRow, endCol] = end;
+    if (bestMove) {
+      const { start, end } = bestMove;
+      const [startRow, startCol] = start;
+      const [endRow, endCol] = end;
 
-    const pieceToMove = currentBoard[startRow][startCol];
-    const newBoard = currentBoard.map((r) => [...r]);
-    newBoard[endRow][endCol] = pieceToMove;
-    newBoard[startRow][startCol] = null;
+      const pieceToMove = currentBoard[startRow][startCol];
+      const newBoard = currentBoard.map((r) => [...r]);
+      newBoard[endRow][endCol] = pieceToMove;
+      newBoard[startRow][startCol] = null;
 
-    setBoard(newBoard);
-    setTurn('white'); // Switch turn back to the player
-  };
+      setBoard(newBoard);
+      setTurn('white');
+      checkEndGame(newBoard, 'white');
+    } else {
+        checkEndGame(currentBoard, 'black');
+    }
+  }, [checkEndGame]);
   
   useEffect(() => {
-    if (turn === 'black' && !isStatic) {
-      // AI's turn. The timeout can be adjusted based on aiLevel for perceived difficulty.
+    if (turn === 'black' && !isStatic && !isGameOver) {
       const thinkTime = 500 + Math.random() * 500;
       setTimeout(() => makeAIMove(board), thinkTime);
     }
-  }, [turn, board, isStatic]);
+  }, [turn, board, isStatic, isGameOver, makeAIMove]);
 
 
   const handleSquareClick = (row: number, col: number) => {
-    if (isStatic || turn !== 'white') return; // Only allow player to move on their turn
+    if (isStatic || turn !== 'white' || isGameOver) return;
 
     const clickedPiece = board[row][col];
     const clickedPieceColor = getPieceColor(clickedPiece);
@@ -386,27 +400,23 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
     if (selectedPiece) {
       const [startRow, startCol] = selectedPiece;
       
-      // If clicking the same piece, deselect it
       if (startRow === row && startCol === col) {
         setSelectedPiece(null);
         setPossibleMoves([]);
         return;
       }
 
-      // If clicking another of your own pieces, switch selection
       if (clickedPieceColor === turn) {
         setSelectedPiece([row, col]);
         calculatePossibleMoves(row, col);
         return;
       }
       
-      // Attempt to move
       if (possibleMoves.some(([r, c]) => r === row && c === col)) {
         const newBoard = board.map((r) => [...r]);
         newBoard[row][col] = newBoard[startRow][startCol];
         newBoard[startRow][startCol] = null;
         
-        // Pawn promotion (simple version: always to Queen)
         if (newBoard[row][col]?.toLowerCase() === 'p' && (row === 0 || row === 7)) {
             newBoard[row][col] = getPieceColor(newBoard[row][col]) === 'white' ? 'Q' : 'q';
         }
@@ -414,14 +424,13 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
         setBoard(newBoard);
         setSelectedPiece(null);
         setPossibleMoves([]);
-        setTurn('black'); // Switch turn to AI
+        checkEndGame(newBoard, 'black');
+        setTurn('black');
       } else {
-        // Invalid move, deselect
         setSelectedPiece(null); 
         setPossibleMoves([]);
       }
     } else if (clickedPiece && clickedPieceColor === turn) {
-      // Select a piece if it's the current player's turn
       setSelectedPiece([row, col]);
       calculatePossibleMoves(row, col);
     }
@@ -460,10 +469,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                 key={`${rowIndex}-${colIndex}`}
                 onClick={() => handleSquareClick(rowIndex, colIndex)}
                 className={cn(
-                  'flex items-center justify-center cursor-pointer relative',
+                  'flex items-center justify-center relative',
                   isLight ? 'bg-secondary' : 'bg-primary/50',
                   isSelected && 'bg-accent/50 ring-2 ring-accent',
-                  !isStatic && turn === 'white' && 'hover:bg-accent/30'
+                  !isStatic && turn === 'white' && !isGameOver && 'cursor-pointer hover:bg-accent/30'
                 )}
               >
                 {isPossibleMove && !board[rowIndex][colIndex] && (
@@ -501,5 +510,3 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
 };
 
 export default Chessboard;
-
-    

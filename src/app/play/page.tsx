@@ -1,16 +1,25 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Chessboard from '@/components/puzzles/chessboard';
+import Chessboard, { GameResult } from '@/components/puzzles/chessboard';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type GameMode = 'robot' | 'online' | 'friend';
 type RobotLevel = {
@@ -123,11 +132,13 @@ const FriendLobby = ({ onBack }: { onBack: () => void }) => {
   };
   
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(gameLink);
-    toast({
-      title: 'Copied to clipboard!',
-      description: 'The game link is ready to be shared.',
-    });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(gameLink);
+      toast({
+        title: 'Copied to clipboard!',
+        description: 'The game link is ready to be shared.',
+      });
+    }
   };
 
   return (
@@ -179,56 +190,143 @@ const FriendLobby = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+const GameOverDialog = ({
+  result,
+  onPlayAgain,
+  onBackToMenu,
+}: {
+  result: GameResult | null;
+  onPlayAgain: () => void;
+  onBackToMenu: () => void;
+}) => {
+  if (!result) return null;
+
+  const title =
+    result === 'checkmate-white'
+      ? 'Checkmate! You Won!'
+      : result === 'checkmate-black'
+      ? 'Checkmate! You Lost.'
+      : 'Stalemate! It\'s a Draw.';
+  const description =
+    result === 'checkmate-white'
+      ? 'Congratulations on your victory!'
+      : result === 'checkmate-black'
+      ? 'Better luck next time. Keep practicing!'
+      : 'The game is a draw as no legal moves can be made.';
+
+  return (
+    <AlertDialog open={!!result}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button variant="outline" onClick={onBackToMenu}>
+            Back to Menu
+          </Button>
+          <Button onClick={onPlayAgain}>
+            Play Again
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+
 
 export default function PlayPage() {
-  const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
-  const [selectedRobotLevel, setSelectedRobotLevel] = useState<RobotLevel | null>(null);
+  const [gameState, setGameState] = useState<{
+    mode: GameMode | null;
+    robotLevel: RobotLevel | null;
+    gameResult: GameResult | null;
+    rematchCounter: number;
+  }>({
+    mode: null,
+    robotLevel: null,
+    gameResult: null,
+    rematchCounter: 0,
+  });
 
   const handleModeSelect = (mode: GameMode) => {
     const gameMode = gameModes.find((m) => m.id === mode);
     if (gameMode && gameMode.isAvailable) {
-      setSelectedMode(mode);
+      setGameState(prev => ({ ...prev, mode }));
     }
   };
   
   const handleRobotSelect = (level: RobotLevel) => {
-    setSelectedRobotLevel(level);
+    setGameState(prev => ({ ...prev, robotLevel: level, gameResult: null, rematchCounter: 0 }));
   }
 
-  const resetSelection = () => {
-    setSelectedMode(null);
-    setSelectedRobotLevel(null);
+  const handleGameOver = (result: GameResult) => {
+    setGameState(prev => ({ ...prev, gameResult: result }));
+  };
+
+  const handlePlayAgain = () => {
+    setGameState(prev => ({
+      ...prev,
+      gameResult: null,
+      rematchCounter: prev.rematchCounter + 1,
+    }));
+  };
+  
+  const handleBackToMenu = () => {
+    setGameState({
+      mode: null,
+      robotLevel: null,
+      gameResult: null,
+      rematchCounter: 0,
+    });
+  }
+  
+  const handleBackToRobotSelection = () => {
+    setGameState(prev => ({ ...prev, robotLevel: null, gameResult: null }));
+  }
+  
+  const handleBackToModeSelection = () => {
+    setGameState(prev => ({ ...prev, mode: null, robotLevel: null, gameResult: null }));
   }
 
-  if (selectedMode === 'robot') {
-    if (selectedRobotLevel) {
+
+  if (gameState.mode === 'robot') {
+    if (gameState.robotLevel) {
       return (
         <div className="container mx-auto px-4 py-8 md:py-12">
-           <Button variant="ghost" onClick={resetSelection} className="mb-4">
+           <Button variant="ghost" onClick={handleBackToRobotSelection} className="mb-4">
             <ChevronLeft className="h-5 w-5 mr-2" />
-            Back to menu
+            Back to robot selection
           </Button>
           <div className="flex justify-center">
             <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
               <CardHeader className="text-center">
-                <CardTitle>vs. {selectedRobotLevel.name} ({selectedRobotLevel.rating})</CardTitle>
+                <CardTitle>vs. {gameState.robotLevel.name} ({gameState.robotLevel.rating})</CardTitle>
                 <CardDescription>
                   You are playing against the AI. It's your move.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Chessboard aiLevel={selectedRobotLevel.rating} />
+                <Chessboard
+                  key={gameState.rematchCounter}
+                  aiLevel={gameState.robotLevel.rating}
+                  onGameOver={handleGameOver}
+                />
               </CardContent>
             </Card>
           </div>
+          <GameOverDialog
+            result={gameState.gameResult}
+            onPlayAgain={handlePlayAgain}
+            onBackToMenu={handleBackToMenu}
+          />
         </div>
       );
     }
-    return <RobotSelection onSelect={handleRobotSelect} onBack={() => setSelectedMode(null)} />;
+    return <RobotSelection onSelect={handleRobotSelect} onBack={handleBackToModeSelection} />;
   }
   
-  if (selectedMode === 'friend') {
-    return <FriendLobby onBack={() => setSelectedMode(null)} />;
+  if (gameState.mode === 'friend') {
+    return <FriendLobby onBack={handleBackToModeSelection} />;
   }
 
 
