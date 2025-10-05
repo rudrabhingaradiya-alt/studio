@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | 'P' | null;
 export type Board = Piece[][];
 type PlayerTurn = 'white' | 'black';
+type PlayerColor = 'white' | 'black' | 'random';
 export type GameResult = 'checkmate-white' | 'checkmate-black' | 'stalemate';
 
 const pieceToUnicode: { [key in Piece as string]: string } = {
@@ -41,12 +42,13 @@ interface ChessboardProps {
   isStatic?: boolean;
   aiLevel?: number;
   onGameOver?: (result: GameResult) => void;
+  playerColor?: PlayerColor;
 }
 
 const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
 const isBlackPiece = (piece: Piece) => piece !== null && piece === piece.toLowerCase();
 
-const getPieceColor = (piece: Piece): PlayerTurn | null => {
+const getPieceColor = (piece: Piece): 'white' | 'black' | null => {
     if (isWhitePiece(piece)) return 'white';
     if (isBlackPiece(piece)) return 'black';
     return null;
@@ -240,8 +242,6 @@ const pieceValues: { [key in Piece as string]: number } = {
   K: 1000, Q: 9, R: 5, B: 3, N: 3, P: 1,
 };
 
-// Simplified piece-square tables for positional value.
-// Higher values are better positions. (for black)
 const pawnPos = [
     [0,  0,  0,  0,  0,  0,  0,  0],
     [5,  5,  5,  5,  5,  5,  5,  5],
@@ -251,7 +251,7 @@ const pawnPos = [
     [0.5,-0.5,-1,0,  0,-1, -0.5,0.5],
     [0.5,1,  1,-2,-2,  1,  1,  0.5],
     [0,  0,  0,  0,  0,  0,  0,  0]
-].reverse(); // Reverse for black pieces
+];
 
 const knightPos = [
     [-5, -4, -3, -3, -3, -3, -4, -5],
@@ -262,7 +262,7 @@ const knightPos = [
     [-3,0.5,  1,1.5,1.5,  1,0.5, -3],
     [-4, -2,  0,0.5,0.5,  0, -2, -4],
     [-5, -4, -3, -3, -3, -3, -4, -5]
-].reverse();
+];
 
 const bishopPos = [
     [-2,-1,-1,-1,-1,-1,-1,-2],
@@ -273,30 +273,49 @@ const bishopPos = [
     [-1, 1, 1, 1, 1, 1, 1,-1],
     [-1,0.5,0, 0, 0, 0,0.5,-1],
     [-2,-1,-1,-1,-1,-1,-1,-2]
-].reverse();
-
+];
 
 const getPositionalValue = (piece: Piece, row: number, col: number) => {
     if (!piece) return 0;
+    const pieceColor = getPieceColor(piece);
     const pieceType = piece.toLowerCase();
-    switch (pieceType) {
-        case 'p': return pawnPos[row][col];
-        case 'n': return knightPos[row][col];
-        case 'b': return bishopPos[row][col];
-        // Rook and Queen values are simpler, mainly about open files/ranks
-        case 'r': return (col === 3 || col === 4) ? 0.5 : 0;
-        case 'q': return 0;
-        default: return 0;
-    }
+    
+    const table = (() => {
+        switch (pieceType) {
+            case 'p': return pawnPos;
+            case 'n': return knightPos;
+            case 'b': return bishopPos;
+            default: return null;
+        }
+    })();
+    
+    if (!table) return 0;
+
+    const value = pieceColor === 'white' ? table[row][col] : table.slice().reverse()[row][col];
+    return pieceColor === 'white' ? value : -value;
 }
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800, onGameOver }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800, onGameOver, playerColor: initialPlayerColor = 'white' }) => {
   const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
   const [turn, setTurn] = useState<PlayerTurn>('white');
   const [isGameOver, setIsGameOver] = useState(false);
+  const [playerColor, setPlayerColor] = useState<PlayerTurn>('white');
+  const [aiColor, setAiColor] = useState<PlayerTurn>('black');
+
+  useEffect(() => {
+    let chosenPlayerColor: PlayerTurn = 'white';
+    if (initialPlayerColor === 'random') {
+      chosenPlayerColor = Math.random() > 0.5 ? 'white' : 'black';
+    } else {
+      chosenPlayerColor = initialPlayerColor;
+    }
+    setPlayerColor(chosenPlayerColor);
+    setAiColor(chosenPlayerColor === 'white' ? 'black' : 'white');
+  }, [initialPlayerColor]);
+
 
   const checkEndGame = useCallback((currentBoard: Board, nextTurn: PlayerTurn) => {
     if (isGameOver) return;
@@ -304,16 +323,16 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
     if (!hasAnyValidMove(currentBoard, nextTurn)) {
         setIsGameOver(true);
         if (isKingInCheck(currentBoard, nextTurn)) {
-            onGameOver?.(nextTurn === 'white' ? 'checkmate-black' : 'checkmate-white');
+            const result: GameResult = nextTurn === playerColor ? 'checkmate-black' : 'checkmate-white';
+            onGameOver?.(result);
         } else {
             onGameOver?.('stalemate');
         }
     }
-  }, [isGameOver, onGameOver]);
+  }, [isGameOver, onGameOver, playerColor]);
 
   const makeAIMove = useCallback((currentBoard: Board) => {
-    const aiColor = 'black';
-    const playerColor = 'white';
+    const opponentColor = playerColor;
     let bestMove: { start: [number, number]; end: [number, number] } | null = null;
     let bestValue = -Infinity;
     let allAIMoves: { start: [number, number]; end: [number, number] }[] = [];
@@ -341,12 +360,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                             // Add positional value
                             moveValue += getPositionalValue(piece, r2, c2) - getPositionalValue(piece, r1, c1);
                             
-                            if (isKingInCheck(newBoard, playerColor)) {
-                                // If player has no valid moves, it's checkmate
-                                if (!hasAnyValidMove(newBoard, playerColor)) {
-                                    moveValue += 10000; // Checkmate is the highest priority
+                            if (isKingInCheck(newBoard, opponentColor)) {
+                                if (!hasAnyValidMove(newBoard, opponentColor)) {
+                                    moveValue += 10000;
                                 } else {
-                                    moveValue += 0.5; // Give a small bonus for a check
+                                    moveValue += 0.5;
                                 }
                             }
 
@@ -376,23 +394,23 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       newBoard[startRow][startCol] = null;
 
       setBoard(newBoard);
-      setTurn('white');
-      checkEndGame(newBoard, 'white');
+      setTurn(playerColor);
+      checkEndGame(newBoard, playerColor);
     } else {
-        checkEndGame(currentBoard, 'black');
+        checkEndGame(currentBoard, aiColor);
     }
-  }, [checkEndGame]);
+  }, [checkEndGame, aiColor, playerColor]);
   
   useEffect(() => {
-    if (turn === 'black' && !isStatic && !isGameOver) {
+    if (turn === aiColor && !isStatic && !isGameOver) {
       const thinkTime = 500 + Math.random() * 500;
       setTimeout(() => makeAIMove(board), thinkTime);
     }
-  }, [turn, board, isStatic, isGameOver, makeAIMove]);
+  }, [turn, board, isStatic, isGameOver, makeAIMove, aiColor]);
 
 
   const handleSquareClick = (row: number, col: number) => {
-    if (isStatic || turn !== 'white' || isGameOver) return;
+    if (isStatic || turn !== playerColor || isGameOver) return;
 
     const clickedPiece = board[row][col];
     const clickedPieceColor = getPieceColor(clickedPiece);
@@ -424,8 +442,8 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
         setBoard(newBoard);
         setSelectedPiece(null);
         setPossibleMoves([]);
-        checkEndGame(newBoard, 'black');
-        setTurn('black');
+        checkEndGame(newBoard, aiColor);
+        setTurn(aiColor);
       } else {
         setSelectedPiece(null); 
         setPossibleMoves([]);
@@ -452,33 +470,39 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
   };
 
 
-  const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-  const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-  
+  const files = playerColor === 'white' ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
+  const ranks = playerColor === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
+  const displayBoard = playerColor === 'white' ? board : board.map(row => row.slice().reverse()).reverse();
+
   return (
     <div className="relative aspect-square w-full max-w-lg mx-auto shadow-2xl rounded-lg overflow-hidden border-4 border-card">
       <div className="grid grid-cols-8 grid-rows-8 aspect-square">
-        {board.map((rowArr, rowIndex) =>
+        {displayBoard.map((rowArr, rowIndex) =>
           rowArr.map((piece, colIndex) => {
             const isLight = (rowIndex + colIndex) % 2 !== 0;
-            const isSelected = selectedPiece && selectedPiece[0] === rowIndex && selectedPiece[1] === colIndex;
-            const isPossibleMove = possibleMoves.some(([r, c]) => r === rowIndex && c === colIndex);
+
+            // Adjust selection and possible moves based on board orientation
+            const originalRow = playerColor === 'white' ? rowIndex : 7 - rowIndex;
+            const originalCol = playerColor === 'white' ? colIndex : 7 - colIndex;
+
+            const isSelected = selectedPiece && selectedPiece[0] === originalRow && selectedPiece[1] === originalCol;
+            const isPossibleMove = possibleMoves.some(([r, c]) => r === originalRow && c === originalCol);
 
             return (
               <div
                 key={`${rowIndex}-${colIndex}`}
-                onClick={() => handleSquareClick(rowIndex, colIndex)}
+                onClick={() => handleSquareClick(originalRow, originalCol)}
                 className={cn(
                   'flex items-center justify-center relative',
                   isLight ? 'bg-secondary' : 'bg-primary/50',
                   isSelected && 'bg-accent/50 ring-2 ring-accent',
-                  !isStatic && turn === 'white' && !isGameOver && 'cursor-pointer hover:bg-accent/30'
+                  !isStatic && turn === playerColor && !isGameOver && 'cursor-pointer hover:bg-accent/30'
                 )}
               >
-                {isPossibleMove && !board[rowIndex][colIndex] && (
+                {isPossibleMove && !displayBoard[rowIndex][colIndex] && (
                   <div className="absolute h-1/3 w-1/3 rounded-full bg-black/20" />
                 )}
-                 {isPossibleMove && board[rowIndex][colIndex] && (
+                 {isPossibleMove && displayBoard[rowIndex][colIndex] && (
                   <div className="absolute h-[90%] w-[90%] rounded-full border-4 border-black/20" />
                 )}
                 <span className="text-4xl md:text-5xl relative" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
@@ -492,7 +516,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
        {/* Ranks */}
        {ranks.map((rank, i) => (
         <div key={rank} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{top: `${i * 12.5}%`}} className="absolute left-0.5 text-xs font-bold text-primary-foreground opacity-70">
+            <span style={{top: `${i * 12.5}%`}} className={cn("absolute text-xs font-bold text-primary-foreground opacity-70", playerColor === 'white' ? 'left-0.5' : 'right-0.5' )}>
                 {rank}
             </span>
         </div>
@@ -500,7 +524,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       {/* Files */}
       {files.map((file, i) => (
         <div key={file} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{left: `${(i * 12.5) + 10.5}%`}} className="absolute bottom-0.5 text-xs font-bold text-primary-foreground opacity-70">
+            <span style={{left: `${(i * 12.5) + (playerColor === 'white' ? 11 : 0)}%`}} className={cn("absolute text-xs font-bold text-primary-foreground opacity-70", playerColor === 'white' ? 'bottom-0.5' : 'top-0.5')}>
                 {file}
             </span>
         </div>

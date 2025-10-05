@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard } from 'lucide-react';
+import { useState } from 'react';
+import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,13 +21,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Slider } from '@/components/ui/slider';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 type GameMode = 'bot' | 'online' | 'friend';
 type BotLevel = {
   name: string;
   rating: number;
-  description: string;
 };
+type PlayerColor = 'white' | 'black' | 'random';
 
 const gameModes: {
   id: GameMode;
@@ -59,74 +64,116 @@ const gameModes: {
   },
 ];
 
-const botLevels: BotLevel[] = [
-  { name: "Newcomer", rating: 200, description: "Just learning the moves." },
-  { name: "Rookie", rating: 250, description: "Knows how the pieces move." },
-  { name: "Beginner", rating: 400, description: "Understands basic strategy." },
-  { name: "Novice", rating: 600, description: "Starts to see simple tactics." },
-  { name: "Intermediate", rating: 800, description: "Avoids basic blunders." },
-  { name: "Adept", rating: 950, description: "Can execute simple combinations." },
-  { name: "Experienced", rating: 1000, description: "A solid, casual player." },
-  { name: "Talented", rating: 1100, description: "Developing tactical vision." },
-  { name: "Skilled", rating: 1200, description: "Thinks a few moves ahead." },
-  { name: "Advanced", rating: 1350, description: "Positional play awareness." },
-  { name: "Expert", rating: 1500, description: "Strong tactical awareness." },
-  { name: "Master", rating: 2000, description: "Deep strategic understanding." },
-  { name: "Grandmaster", rating: 2500, description: "World-class performance." },
-  { name: "Elite", rating: 2750, description: "Near-perfect tactical play." },
-  { name: "Super Grandmaster", rating: 2800, description: "The pinnacle of chess skill." },
-  { name: "Titan", rating: 2900, description: "Legendary-tier AI opponent." },
-  { name: "Stockfish", rating: 3200, description: "The strongest chess engine." },
-];
+const botRatingMap: { [key: number]: string } = {
+  200: "Newcomer", 400: "Beginner", 600: "Novice", 800: "Intermediate", 1000: "Adept",
+  1200: "Skilled", 1500: "Expert", 2000: "Master", 2500: "Grandmaster", 2800: "Super Grandmaster",
+  3200: "Stockfish"
+};
 
-const BotSelection = ({ onSelect, onBack }: { onSelect: (level: BotLevel) => void, onBack: () => void }) => (
-  <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
-    <div className="relative mx-auto max-w-3xl text-center">
-      <Button variant="ghost" onClick={onBack} className="absolute top-0 left-0 -translate-y-1/2">
-        <ChevronLeft className="h-5 w-5 mr-2" />
-        Back
-      </Button>
-      <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
-        Choose Your Opponent
-      </h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        Select a bot to match your skill level.
-      </p>
-    </div>
-    <ScrollArea className="mt-12 mx-auto max-w-4xl h-[calc(100vh-22rem)]">
-      <div className="grid gap-4 p-1">
-        {botLevels.map((level) => (
-          <Card
-            key={level.rating}
-            onClick={() => onSelect(level)}
-            className="flex items-center justify-between p-4 transition-all cursor-pointer hover:border-primary hover:shadow-lg"
-          >
-            <div className="flex items-center gap-4">
-               <div className="rounded-full bg-primary/10 p-3 text-primary">
-                <BrainCircuit className="h-6 w-6" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">{level.name}</CardTitle>
-                <CardDescription>{level.description}</CardDescription>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold">{level.rating}</p>
-              <p className="text-sm text-muted-foreground">Rating</p>
-            </div>
-          </Card>
-        ))}
+const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) => void; onBack: () => void }) => {
+  const [config, setConfig] = useState<BotGameConfig>({
+    rating: 800,
+    color: 'random',
+    timeControl: 'unlimited',
+  });
+
+  const handleRatingChange = (value: number[]) => {
+    setConfig(prev => ({ ...prev, rating: value[0] }));
+  };
+
+  const getBotName = (rating: number) => {
+    const ratings = Object.keys(botRatingMap).map(Number);
+    const closestRating = ratings.reduce((prev, curr) => 
+      (Math.abs(curr - rating) < Math.abs(prev - rating) ? curr : prev)
+    );
+    return botRatingMap[closestRating];
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
+      <div className="relative mx-auto max-w-2xl text-center">
+        <Button variant="ghost" onClick={onBack} className="absolute top-0 left-0 -translate-y-1/2">
+          <ChevronLeft className="h-5 w-5 mr-2" />
+          Back
+        </Button>
+        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+          Customize Your Game
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          Set up the rules and challenge the bot.
+        </p>
       </div>
-    </ScrollArea>
-  </div>
-);
+
+      <div className="mt-12 mx-auto max-w-lg">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Settings className="h-6 w-6"/> Game Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <div className="space-y-4">
+              <Label>Bot Strength: <span className="font-bold">{getBotName(config.rating)} ({config.rating})</span></Label>
+              <Slider
+                min={200}
+                max={3200}
+                step={50}
+                value={[config.rating]}
+                onValueChange={handleRatingChange}
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <Label>Your Piece Color</Label>
+              <RadioGroup
+                value={config.color}
+                onValueChange={(value: PlayerColor) => setConfig(prev => ({ ...prev, color: value }))}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="white" id="white" />
+                  <Label htmlFor="white">White</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="black" id="black" />
+                  <Label htmlFor="black">Black</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="random" id="random" />
+                  <Label htmlFor="random">Random</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-4">
+              <Label>Time Control</Label>
+              <Select 
+                value={config.timeControl}
+                onValueChange={(value: string) => setConfig(prev => ({...prev, timeControl: value}))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time control" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unlimited">Unlimited</SelectItem>
+                  <SelectItem value="5">5 minutes</SelectItem>
+                  <SelectItem value="10">10 minutes</SelectItem>
+                  <SelectItem value="30">30 minutes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button className="w-full" size="lg" onClick={() => onStart(config)}>Start Game</Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
 
 const FriendLobby = ({ onBack }: { onBack: () => void }) => {
   const [gameLink, setGameLink] = useState('');
   const { toast } = useToast();
 
   const handleCreateGame = () => {
-    // In a real app, this would call a backend to create a game and get a unique ID
     const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
     const link = `${window.location.origin}/play/${gameId}`;
     setGameLink(link);
@@ -260,31 +307,42 @@ const LeaveGameDialog = ({
   </AlertDialog>
 );
 
+interface BotGameConfig {
+  rating: number;
+  color: PlayerColor;
+  timeControl: string;
+}
 
 export default function PlayPage() {
   const [gameState, setGameState] = useState<{
     mode: GameMode | null;
-    botLevel: BotLevel | null;
+    botGameConfig: BotGameConfig | null;
     gameResult: GameResult | null;
     rematchCounter: number;
     showLeaveConfirm: boolean;
+    showBotSetup: boolean;
   }>({
     mode: null,
-    botLevel: null,
+    botGameConfig: null,
     gameResult: null,
     rematchCounter: 0,
     showLeaveConfirm: false,
+    showBotSetup: false,
   });
 
   const handleModeSelect = (mode: GameMode) => {
     const gameMode = gameModes.find((m) => m.id === mode);
     if (gameMode && gameMode.isAvailable) {
-      setGameState(prev => ({ ...prev, mode }));
+      if (mode === 'bot') {
+        setGameState(prev => ({ ...prev, mode, showBotSetup: true }));
+      } else {
+        setGameState(prev => ({ ...prev, mode }));
+      }
     }
   };
   
-  const handleBotSelect = (level: BotLevel) => {
-    setGameState(prev => ({ ...prev, botLevel: level, gameResult: null, rematchCounter: 0 }));
+  const handleBotGameStart = (config: BotGameConfig) => {
+    setGameState(prev => ({ ...prev, botGameConfig: config, showBotSetup: false, gameResult: null, rematchCounter: 0 }));
   }
 
   const handleGameOver = (result: GameResult) => {
@@ -302,19 +360,20 @@ export default function PlayPage() {
   const handleBackToMenu = () => {
     setGameState({
       mode: null,
-      botLevel: null,
+      botGameConfig: null,
       gameResult: null,
       rematchCounter: 0,
       showLeaveConfirm: false,
+      showBotSetup: false,
     });
   }
   
-  const handleBackToBotSelection = () => {
-    setGameState(prev => ({ ...prev, botLevel: null, gameResult: null }));
+  const handleBackToBotSetup = () => {
+    setGameState(prev => ({ ...prev, botGameConfig: null, gameResult: null, showBotSetup: true }));
   }
   
   const handleBackToModeSelection = () => {
-    setGameState(prev => ({ ...prev, mode: null, botLevel: null, gameResult: null }));
+    setGameState(prev => ({ ...prev, mode: null, botGameConfig: null, gameResult: null, showBotSetup: false }));
   }
 
   const handleRequestLeave = () => {
@@ -326,21 +385,33 @@ export default function PlayPage() {
   }
   
   const handleConfirmLeave = () => {
-    setGameState(prev => ({ ...prev, botLevel: null, gameResult: null, showLeaveConfirm: false }));
+    setGameState(prev => ({ ...prev, botGameConfig: null, gameResult: null, showLeaveConfirm: false, showBotSetup: true }));
+  }
+  
+  const getBotName = (rating: number) => {
+    const ratings = Object.keys(botRatingMap).map(Number);
+    const closestRating = ratings.reduce((prev, curr) => 
+      (Math.abs(curr - rating) < Math.abs(prev - rating) ? curr : prev)
+    );
+    return botRatingMap[closestRating];
   }
 
+
   if (gameState.mode === 'bot') {
-    if (gameState.botLevel) {
+    if (gameState.showBotSetup) {
+      return <BotGameSetup onStart={handleBotGameStart} onBack={handleBackToModeSelection} />;
+    }
+    if (gameState.botGameConfig) {
       return (
         <div className="container mx-auto px-4 py-8 md:py-12">
            <Button variant="ghost" onClick={handleRequestLeave} className="mb-4">
             <ChevronLeft className="h-5 w-5 mr-2" />
-            Back to bot selection
+            Back to bot setup
           </Button>
           <div className="flex justify-center">
             <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
               <CardHeader className="text-center">
-                <CardTitle>vs. {gameState.botLevel.name} ({gameState.botLevel.rating})</CardTitle>
+                <CardTitle>vs. {getBotName(gameState.botGameConfig.rating)} ({gameState.botGameConfig.rating})</CardTitle>
                 <CardDescription>
                   You are playing against the AI. It's your move.
                 </CardDescription>
@@ -348,8 +419,9 @@ export default function PlayPage() {
               <CardContent>
                 <Chessboard
                   key={gameState.rematchCounter}
-                  aiLevel={gameState.botLevel.rating}
+                  aiLevel={gameState.botGameConfig.rating}
                   onGameOver={handleGameOver}
+                  playerColor={gameState.botGameConfig.color}
                 />
               </CardContent>
             </Card>
@@ -367,7 +439,6 @@ export default function PlayPage() {
         </div>
       );
     }
-    return <BotSelection onSelect={handleBotSelect} onBack={handleBackToModeSelection} />;
   }
   
   if (gameState.mode === 'friend') {
