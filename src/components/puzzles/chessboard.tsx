@@ -1,9 +1,9 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { type BoardTheme, boardThemes } from '@/lib/board-themes';
+import { type Puzzle } from '@/lib/puzzles';
 
 type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | 'P' | null;
 export type Board = Piece[][];
@@ -27,22 +27,34 @@ const defaultBoard: Board = [
   ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
 ];
 
-const puzzleBoard: Board = [
-    [null, null, null, null, null, 'r', null, 'k'],
-    [null, null, 'p', null, 'p', 'p', 'p', 'p'],
-    [null, 'p', 'n', null, null, 'n', 'b', null],
-    ['p', null, null, 'P', null, null, null, null],
-    ['P', 'B', 'P', null, null, 'N', null, null],
-    [null, null, 'Q', null, null, null, null, 'P'],
-    [null, 'P', null, null, null, 'P', 'P', null],
-    [null, null, null, 'R', null, 'K', null, null],
-];
+// FEN parsing function
+const fenToBoard = (fen: string): [Board, PlayerTurn] => {
+  const [boardPart, turnPart] = fen.split(' ');
+  const rows = boardPart.split('/');
+  const board: Board = rows.map(row => {
+    const newRow: Piece[] = [];
+    for (const char of row) {
+      if (isNaN(parseInt(char))) {
+        newRow.push(char as Piece);
+      } else {
+        for (let i = 0; i < parseInt(char); i++) {
+          newRow.push(null);
+        }
+      }
+    }
+    return newRow;
+  });
+  const turn: PlayerTurn = turnPart === 'w' ? 'white' : 'black';
+  return [board, turn];
+};
 
 interface ChessboardProps {
-  initialBoard?: Board;
+  puzzle?: Puzzle;
   isStatic?: boolean;
   aiLevel?: number;
   onGameOver?: (result: GameResult) => void;
+  onPuzzleCorrect?: () => void;
+  onPuzzleIncorrect?: () => void;
   playerColor?: PlayerColor;
   boardTheme?: string;
 }
@@ -56,6 +68,10 @@ const getPieceColor = (piece: Piece): 'white' | 'black' | null => {
     return null;
 }
 
+const squareToNotation = (row: number, col: number) => {
+    return `${'abcdefgh'[col]}${8 - row}`;
+}
+
 const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
   const piece = board[startRow][startCol];
   const targetPiece = board[endRow][endCol];
@@ -64,7 +80,6 @@ const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: numbe
 
   const pieceColor = getPieceColor(piece);
 
-  // Cannot capture a piece of the same color
   if (targetPiece) {
     const targetColor = getPieceColor(targetPiece);
     if (pieceColor === targetColor) {
@@ -79,17 +94,13 @@ const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: numbe
   switch (pieceType) {
     case 'p': // Pawn
       const direction = pieceColor === 'white' ? -1 : 1;
-      // Moving forward
       if (startCol === endCol && targetPiece === null) {
-        // Move one square
         if (startRow + direction === endRow) return true;
-        // Move two squares from starting position
         const startRank = pieceColor === 'white' ? 6 : 1;
         if (startRow === startRank && startRow + 2 * direction === endRow && board[startRow + direction][startCol] === null) {
           return true;
         }
       }
-      // Capturing
       if (rowDiff === 1 && colDiff === 1 && targetPiece !== null && startRow + direction === endRow) {
         return true;
       }
@@ -97,7 +108,6 @@ const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: numbe
 
     case 'r': // Rook
       if (startRow === endRow || startCol === endCol) {
-        // Check for pieces in the path
         if (startRow === endRow) { // Horizontal move
           const [minCol, maxCol] = [Math.min(startCol, endCol), Math.max(startCol, endCol)];
           for (let col = minCol + 1; col < maxCol; col++) {
@@ -118,7 +128,6 @@ const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: numbe
 
     case 'b': // Bishop
       if (rowDiff === colDiff) {
-        // Check for pieces in the path
         const rowStep = (endRow - startRow) > 0 ? 1 : -1;
         const colStep = (endCol - startCol) > 0 ? 1 : -1;
         for (let i = 1; i < rowDiff; i++) {
@@ -131,7 +140,6 @@ const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: numbe
       return false;
 
     case 'q': // Queen
-      // Rook-like move
       if (startRow === endRow || startCol === endCol) {
         if (startRow === endRow) {
           const [minCol, maxCol] = [Math.min(startCol, endCol), Math.max(startCol, endCol)];
@@ -146,7 +154,6 @@ const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: numbe
         }
         return true;
       }
-      // Bishop-like move
       if (rowDiff === colDiff) {
         const rowStep = (endRow - startRow) > 0 ? 1 : -1;
         const colStep = (endCol - startCol) > 0 ? 1 : -1;
@@ -195,7 +202,7 @@ const findKing = (board: Board, color: PlayerTurn): [number, number] | null => {
 
 const isKingInCheck = (board: Board, kingColor: PlayerTurn): boolean => {
     const kingPos = findKing(board, kingColor);
-    if (!kingPos) return true; // King is captured, game over.
+    if (!kingPos) return true;
     const [kingRow, kingCol] = kingPos;
     const opponentColor = kingColor === 'white' ? 'black' : 'white';
     return isSquareAttacked(board, kingRow, kingCol, opponentColor);
@@ -213,12 +220,10 @@ const isValidMove = (board: Board, startRow: number, startCol: number, endRow: n
     const pieceColor = getPieceColor(piece);
     if (!pieceColor) return false;
 
-    // Simulate the move
     const newBoard = board.map(r => [...r]);
     newBoard[endRow][endCol] = newBoard[startRow][startCol];
     newBoard[startRow][startCol] = null;
 
-    // Check if the king of the moving player is in check after the move
     return !isKingInCheck(newBoard, pieceColor);
 };
 
@@ -298,11 +303,13 @@ const getPositionalValue = (piece: Piece, row: number, col: number) => {
 }
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, aiLevel=800, onGameOver, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default' }) => {
-  const [board, setBoard] = useState(initialBoard || (isStatic ? puzzleBoard : defaultBoard));
+const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel=800, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default' }) => {
+  const [initialBoard, initialTurn] = useMemo(() => puzzle ? fenToBoard(puzzle.fen) : [defaultBoard, 'white' as PlayerTurn], [puzzle]);
+
+  const [board, setBoard] = useState<Board>(initialBoard);
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
-  const [turn, setTurn] = useState<PlayerTurn>('white');
+  const [turn, setTurn] = useState<PlayerTurn>(initialTurn);
   const [isGameOver, setIsGameOver] = useState(false);
   const [playerColor, setPlayerColor] = useState<PlayerTurn>('white');
   const [aiColor, setAiColor] = useState<PlayerTurn>('black');
@@ -311,17 +318,24 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
   useEffect(() => {
     setCurrentTheme(boardThemes.find(t => t.id === boardThemeId));
   }, [boardThemeId]);
+  
+  useEffect(() => {
+    setBoard(initialBoard);
+    setTurn(initialTurn);
+  }, [initialBoard, initialTurn]);
 
   useEffect(() => {
-    let chosenPlayerColor: PlayerTurn = 'white';
-    if (initialPlayerColor === 'random') {
-      chosenPlayerColor = Math.random() > 0.5 ? 'white' : 'black';
-    } else {
-      chosenPlayerColor = initialPlayerColor;
+    let chosenPlayerColor: PlayerTurn = initialPlayerColor === 'random' 
+        ? (Math.random() > 0.5 ? 'white' : 'black') 
+        : initialPlayerColor;
+    
+    if (puzzle) {
+        chosenPlayerColor = initialTurn;
     }
+    
     setPlayerColor(chosenPlayerColor);
     setAiColor(chosenPlayerColor === 'white' ? 'black' : 'white');
-  }, [initialPlayerColor]);
+  }, [initialPlayerColor, puzzle, initialTurn]);
 
 
   const checkEndGame = useCallback((currentBoard: Board, nextTurn: PlayerTurn) => {
@@ -344,7 +358,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
     let bestValue = -Infinity;
     let allAIMoves: { start: [number, number]; end: [number, number] }[] = [];
 
-    // Find all possible moves for the AI
     for (let r1 = 0; r1 < 8; r1++) {
         for (let c1 = 0; c1 < 8; c1++) {
             const piece = currentBoard[r1][c1];
@@ -364,7 +377,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                                 moveValue += pieceValues[capturedPiece] || 0;
                             }
 
-                            // Add positional value
                             moveValue += getPositionalValue(piece, r2, c2) - getPositionalValue(piece, r1, c1);
                             
                             if (isKingInCheck(newBoard, opponentColor)) {
@@ -409,11 +421,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
   }, [checkEndGame, aiColor, playerColor]);
   
   useEffect(() => {
-    if (turn === aiColor && !isStatic && !isGameOver) {
+    if (turn === aiColor && !isStatic && !isGameOver && !puzzle) {
       const thinkTime = 500 + Math.random() * 500;
       setTimeout(() => makeAIMove(board), thinkTime);
     }
-  }, [turn, board, isStatic, isGameOver, makeAIMove, aiColor]);
+  }, [turn, board, isStatic, isGameOver, makeAIMove, aiColor, puzzle]);
 
 
   const handleSquareClick = (row: number, col: number) => {
@@ -438,6 +450,27 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       }
       
       if (possibleMoves.some(([r, c]) => r === row && c === col)) {
+        
+        if (puzzle) {
+            const piece = board[startRow][startCol] as string;
+            const moveNotation = `${piece.toUpperCase()}${squareToNotation(row, col)}`;
+            
+            // Simplified notation check for now
+            const simpleMoveNotation = `${piece}${squareToNotation(row, col)}`;
+            const simpleMoveNotationCapture = `${piece}x${squareToNotation(row, col)}`;
+            const expectedMove = puzzle.solution[0];
+
+            // This is a very simplified check and would need a proper chess engine/library for full algebraic notation
+            if(expectedMove.endsWith(squareToNotation(row, col))) {
+                onPuzzleCorrect?.();
+            } else {
+                onPuzzleIncorrect?.();
+                setSelectedPiece(null);
+                setPossibleMoves([]);
+                return; 
+            }
+        }
+        
         const newBoard = board.map((r) => [...r]);
         newBoard[row][col] = newBoard[startRow][startCol];
         newBoard[startRow][startCol] = null;
@@ -449,8 +482,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
         setBoard(newBoard);
         setSelectedPiece(null);
         setPossibleMoves([]);
-        checkEndGame(newBoard, aiColor);
-        setTurn(aiColor);
+        if (!puzzle) {
+            checkEndGame(newBoard, aiColor);
+            setTurn(aiColor);
+        }
       } else {
         setSelectedPiece(null); 
         setPossibleMoves([]);
@@ -477,9 +512,15 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
   };
 
 
-  const files = playerColor === 'white' ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
-  const ranks = playerColor === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
-  const displayBoard = playerColor === 'white' ? board : board.map(row => row.slice().reverse()).reverse();
+  const boardOrientation = puzzle ? initialTurn : playerColor;
+
+  const files = boardOrientation === 'white' ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
+  const ranks = boardOrientation === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
+  
+  const displayBoard = useMemo(() => {
+    return boardOrientation === 'white' ? board : board.map(row => row.slice().reverse()).reverse();
+  }, [board, boardOrientation]);
+
   const theme = currentTheme || boardThemes[0];
   const lightSquareClass = theme.light;
   const darkSquareClass = theme.dark;
@@ -489,15 +530,14 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       <div className="grid grid-cols-8 grid-rows-8 aspect-square">
         {displayBoard.map((rowArr, rowIndex) =>
           rowArr.map((piece, colIndex) => {
-            const isLight = (rowIndex + colIndex) % 2 !== 0;
-
-            // Adjust selection and possible moves based on board orientation
-            const originalRow = playerColor === 'white' ? rowIndex : 7 - rowIndex;
-            const originalCol = playerColor === 'white' ? colIndex : 7 - colIndex;
+            
+            const originalRow = boardOrientation === 'white' ? rowIndex : 7 - rowIndex;
+            const originalCol = boardOrientation === 'white' ? colIndex : 7 - colIndex;
 
             const isSelected = selectedPiece && selectedPiece[0] === originalRow && selectedPiece[1] === originalCol;
             const isPossibleMove = possibleMoves.some(([r, c]) => r === originalRow && c === originalCol);
             const pieceColor = getPieceColor(piece);
+            const isLight = (originalRow + originalCol) % 2 !== 0;
 
             return (
               <div
@@ -507,16 +547,16 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                   'flex items-center justify-center relative',
                   isLight ? lightSquareClass : darkSquareClass,
                   isSelected && 'bg-yellow-400/70 ring-2 ring-yellow-500',
-                  !isStatic && turn === playerColor && !isGameOver && 'cursor-pointer hover:bg-yellow-400/50'
+                  !isStatic && turn === playerColor && !isGameOver && 'cursor-pointer'
                 )}
               >
-                {isPossibleMove && !displayBoard[rowIndex][colIndex] && (
+                {isPossibleMove && !piece && (
                   <div className="absolute h-1/3 w-1/3 rounded-full bg-black/20" />
                 )}
-                 {isPossibleMove && displayBoard[rowIndex][colIndex] && (
+                 {isPossibleMove && piece && (
                   <div className="absolute h-[90%] w-[90%] rounded-full border-4 border-black/20" />
                 )}
-                <span className={cn("text-4xl md:text-5xl relative drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]", {
+                <span className={cn("text-4xl md:text-5xl relative drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)] z-10", {
                     "text-stone-100": pieceColor === 'white',
                     "text-stone-800": pieceColor === 'black',
                 })}>
@@ -527,18 +567,16 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
           })
         )}
       </div>
-       {/* Ranks */}
        {ranks.map((rank, i) => (
         <div key={rank} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{top: `${i * 12.5}%`}} className={cn("absolute text-xs font-bold text-neutral-900/40", playerColor === 'white' ? 'left-0.5' : 'right-0.5' )}>
+            <span style={{top: `${i * 12.5}%`}} className={cn("absolute text-xs font-bold opacity-50", isLight(i, 0) ? darkSquareClass : lightSquareClass, boardOrientation === 'white' ? 'left-0.5' : 'right-0.5' )}>
                 {rank}
             </span>
         </div>
       ))}
-      {/* Files */}
       {files.map((file, i) => (
         <div key={file} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{left: `${(i * 12.5) + (playerColor === 'white' ? 11 : 0)}%`}} className={cn("absolute text-xs font-bold text-neutral-900/40", playerColor === 'white' ? 'bottom-0.5' : 'top-0.5')}>
+            <span style={{left: `${i * 12.5}%`, transform: 'translateX(0.2rem)'}} className={cn("absolute text-xs font-bold opacity-50", isLight(7, i) ? darkSquareClass : lightSquareClass, boardOrientation === 'white' ? 'bottom-0.5' : 'top-0.5')}>
                 {file}
             </span>
         </div>
@@ -546,5 +584,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
     </div>
   );
 };
+const isLight = (row: number, col: number) => (row + col) % 2 !== 0;
+
 
 export default Chessboard;
