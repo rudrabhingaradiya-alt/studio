@@ -3,12 +3,12 @@
 
 import { useState } from 'react';
 import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Chessboard, { GameResult } from '@/components/puzzles/chessboard';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -26,7 +26,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTheme } from '@/context/theme-context';
-
 
 type GameMode = 'bot' | 'online' | 'friend';
 type BotLevel = {
@@ -316,6 +315,9 @@ interface BotGameConfig {
 
 export default function PlayPage() {
   const { boardTheme } = useTheme();
+  const router = useRouter();
+  const params = useParams();
+
   const [gameState, setGameState] = useState<{
     mode: GameMode | null;
     botGameConfig: BotGameConfig | null;
@@ -344,7 +346,8 @@ export default function PlayPage() {
   };
   
   const handleBotGameStart = (config: BotGameConfig) => {
-    setGameState(prev => ({ ...prev, botGameConfig: config, showBotSetup: false, gameResult: null, rematchCounter: 0 }));
+    localStorage.setItem('botGameConfig', JSON.stringify(config));
+    router.push('/play/bot');
   }
 
   const handleGameOver = (result: GameResult) => {
@@ -360,18 +363,11 @@ export default function PlayPage() {
   };
   
   const handleBackToMenu = () => {
-    setGameState({
-      mode: null,
-      botGameConfig: null,
-      gameResult: null,
-      rematchCounter: 0,
-      showLeaveConfirm: false,
-      showBotSetup: false,
-    });
+    router.push('/play');
   }
   
   const handleBackToBotSetup = () => {
-    setGameState(prev => ({ ...prev, botGameConfig: null, gameResult: null, showBotSetup: true }));
+    router.push('/play');
   }
   
   const handleBackToModeSelection = () => {
@@ -387,7 +383,7 @@ export default function PlayPage() {
   }
   
   const handleConfirmLeave = () => {
-    setGameState(prev => ({ ...prev, botGameConfig: null, gameResult: null, showLeaveConfirm: false, showBotSetup: true }));
+    router.push('/play');
   }
   
   const getBotName = (rating: number) => {
@@ -398,22 +394,29 @@ export default function PlayPage() {
     return botRatingMap[closestRating];
   }
 
+  if (params.game && params.game[0] === 'bot') {
+    const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
 
-  if (gameState.mode === 'bot') {
-    if (gameState.showBotSetup) {
-      return <BotGameSetup onStart={handleBotGameStart} onBack={handleBackToModeSelection} />;
-    }
-    if (gameState.botGameConfig) {
+    useState(() => {
+        const configStr = localStorage.getItem('botGameConfig');
+        if (configStr) {
+            setBotGameConfig(JSON.parse(configStr));
+        } else {
+            router.push('/play');
+        }
+    });
+
+    if (botGameConfig) {
       return (
-        <div className="container mx-auto px-4 py-8 md:py-12">
-           <Button variant="ghost" onClick={handleRequestLeave} className="mb-4">
+        <div className="flex h-screen w-screen items-center justify-center bg-background p-4">
+           <Button variant="ghost" onClick={handleRequestLeave} className="absolute top-4 left-4">
             <ChevronLeft className="h-5 w-5 mr-2" />
-            Back to bot setup
+            Exit Game
           </Button>
           <div className="flex justify-center">
             <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
               <CardHeader className="text-center">
-                <CardTitle>vs. {getBotName(gameState.botGameConfig.rating)} ({gameState.botGameConfig.rating})</CardTitle>
+                <CardTitle>vs. {getBotName(botGameConfig.rating)} ({botGameConfig.rating})</CardTitle>
                 <CardDescription>
                   You are playing against the AI. It's your move.
                 </CardDescription>
@@ -421,9 +424,9 @@ export default function PlayPage() {
               <CardContent>
                 <Chessboard
                   key={gameState.rematchCounter}
-                  aiLevel={gameState.botGameConfig.rating}
+                  aiLevel={botGameConfig.rating}
                   onGameOver={handleGameOver}
-                  playerColor={gameState.botGameConfig.color}
+                  playerColor={botGameConfig.color}
                   boardTheme={boardTheme}
                 />
               </CardContent>
@@ -442,12 +445,18 @@ export default function PlayPage() {
         </div>
       );
     }
+    return null;
+  }
+  
+  if (gameState.mode === 'bot') {
+    if (gameState.showBotSetup) {
+      return <BotGameSetup onStart={handleBotGameStart} onBack={handleBackToModeSelection} />;
+    }
   }
   
   if (gameState.mode === 'friend') {
     return <FriendLobby onBack={handleBackToModeSelection} />;
   }
-
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
