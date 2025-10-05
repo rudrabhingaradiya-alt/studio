@@ -495,9 +495,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                 onClick={() => handleSquareClick(originalRow, originalCol)}
                 className={cn(
                   'flex items-center justify-center relative',
-                  isLight ? 'bg-secondary' : 'bg-primary/50',
-                  isSelected && 'bg-accent/50 ring-2 ring-accent',
-                  !isStatic && turn === playerColor && !isGameOver && 'cursor-pointer hover:bg-accent/30'
+                  isLight ? 'bg-amber-200' : 'bg-amber-600',
+                  isSelected && 'bg-yellow-400/70 ring-2 ring-yellow-500',
+                  !isStatic && turn === playerColor && !isGameOver && 'cursor-pointer hover:bg-yellow-400/50'
                 )}
               >
                 {isPossibleMove && !displayBoard[rowIndex][colIndex] && (
@@ -520,7 +520,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
        {/* Ranks */}
        {ranks.map((rank, i) => (
         <div key={rank} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{top: `${i * 12.5}%`}} className={cn("absolute text-xs font-bold text-primary-foreground opacity-70", playerColor === 'white' ? 'left-0.5' : 'right-0.5' )}>
+            <span style={{top: `${i * 12.5}%`}} className={cn("absolute text-xs font-bold text-amber-900/70", playerColor === 'white' ? 'left-0.5' : 'right-0.5' )}>
                 {rank}
             </span>
         </div>
@@ -528,7 +528,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
       {/* Files */}
       {files.map((file, i) => (
         <div key={file} className="absolute top-0 h-full w-full pointer-events-none">
-            <span style={{left: `${(i * 12.5) + (playerColor === 'white' ? 11 : 0)}%`}} className={cn("absolute text-xs font-bold text-primary-foreground opacity-70", playerColor === 'white' ? 'bottom-0.5' : 'top-0.5')}>
+            <span style={{left: `${(i * 12.5) + (playerColor === 'white' ? 11 : 0)}%`}} className={cn("absolute text-xs font-bold text-amber-900/70", playerColor === 'white' ? 'bottom-0.5' : 'top-0.5')}>
                 {file}
             </span>
         </div>
