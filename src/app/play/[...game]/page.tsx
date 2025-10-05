@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 
@@ -313,35 +313,95 @@ interface BotGameConfig {
   timeControl: string;
 }
 
+const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { config: BotGameConfig, onExit: () => void, onRematch: () => void, gameResult: GameResult | null, onGameOver: (result: GameResult) => void }) => {
+    const { boardTheme } = useTheme();
+    const router = useRouter();
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [rematchCounter, setRematchCounter] = useState(0);
+
+    const getBotName = (rating: number) => {
+        const ratings = Object.keys(botRatingMap).map(Number);
+        const closestRating = ratings.reduce((prev, curr) => 
+          (Math.abs(curr - rating) < Math.abs(prev - rating) ? curr : prev)
+        );
+        return botRatingMap[closestRating];
+    }
+
+    const handlePlayAgain = () => {
+        onRematch();
+        setRematchCounter(prev => prev + 1);
+    }
+
+    return (
+        <div className="flex h-screen w-screen items-center justify-center bg-background p-4">
+            <Button variant="ghost" onClick={() => setShowLeaveConfirm(true)} className="absolute top-4 left-4">
+                <ChevronLeft className="h-5 w-5 mr-2" />
+                Exit Game
+            </Button>
+            <div className="flex justify-center">
+                <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
+                    <CardHeader className="text-center">
+                        <CardTitle>vs. {getBotName(config.rating)} ({config.rating})</CardTitle>
+                        <CardDescription>
+                            You are playing against the AI. It's your move.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Chessboard
+                            key={rematchCounter}
+                            aiLevel={config.rating}
+                            onGameOver={onGameOver}
+                            playerColor={config.color}
+                            boardTheme={boardTheme}
+                        />
+                    </CardContent>
+                </Card>
+            </div>
+            <GameOverDialog
+                result={gameResult}
+                onPlayAgain={handlePlayAgain}
+                onBackToMenu={onExit}
+            />
+            <LeaveGameDialog
+                isOpen={showLeaveConfirm}
+                onCancel={() => setShowLeaveConfirm(false)}
+                onConfirm={onExit}
+            />
+        </div>
+    );
+}
+
 export default function PlayPage() {
-  const { boardTheme } = useTheme();
   const router = useRouter();
   const params = useParams();
 
-  const [gameState, setGameState] = useState<{
-    mode: GameMode | null;
-    botGameConfig: BotGameConfig | null;
-    gameResult: GameResult | null;
-    rematchCounter: number;
-    showLeaveConfirm: boolean;
-    showBotSetup: boolean;
-  }>({
-    mode: null,
-    botGameConfig: null,
-    gameResult: null,
-    rematchCounter: 0,
-    showLeaveConfirm: false,
-    showBotSetup: false,
-  });
+  const [mode, setMode] = useState<GameMode | null>(null);
+  const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
+  const [gameResult, setGameResult] = useState<GameResult | null>(null);
 
-  const handleModeSelect = (mode: GameMode) => {
-    const gameMode = gameModes.find((m) => m.id === mode);
-    if (gameMode && gameMode.isAvailable) {
-      if (mode === 'bot') {
-        setGameState(prev => ({ ...prev, mode, showBotSetup: true }));
+  useEffect(() => {
+    const gameParam = params.game?.[0];
+    if (gameParam === 'bot') {
+      const configStr = localStorage.getItem('botGameConfig');
+      if (configStr) {
+        setBotGameConfig(JSON.parse(configStr));
+        setMode('bot');
       } else {
-        setGameState(prev => ({ ...prev, mode }));
+        router.push('/play');
       }
+    } else if (gameParam) {
+      // Logic for 'friend' or other modes can go here
+    } else {
+        setMode(null);
+        setBotGameConfig(null);
+        setGameResult(null);
+    }
+  }, [params.game, router]);
+
+  const handleModeSelect = (selectedMode: GameMode) => {
+    const gameMode = gameModes.find((m) => m.id === selectedMode);
+    if (gameMode && gameMode.isAvailable) {
+      setMode(selectedMode);
     }
   };
   
@@ -350,111 +410,28 @@ export default function PlayPage() {
     router.push('/play/bot');
   }
 
-  const handleGameOver = (result: GameResult) => {
-    setGameState(prev => ({ ...prev, gameResult: result }));
-  };
-
-  const handlePlayAgain = () => {
-    setGameState(prev => ({
-      ...prev,
-      gameResult: null,
-      rematchCounter: prev.rematchCounter + 1,
-    }));
-  };
-  
-  const handleBackToMenu = () => {
-    router.push('/play');
-  }
-  
-  const handleBackToBotSetup = () => {
-    router.push('/play');
-  }
-  
   const handleBackToModeSelection = () => {
-    setGameState(prev => ({ ...prev, mode: null, botGameConfig: null, gameResult: null, showBotSetup: false }));
-  }
-
-  const handleRequestLeave = () => {
-    setGameState(prev => ({ ...prev, showLeaveConfirm: true }));
-  }
-
-  const handleCancelLeave = () => {
-    setGameState(prev => ({ ...prev, showLeaveConfirm: false }));
-  }
-  
-  const handleConfirmLeave = () => {
+    setMode(null);
+    setBotGameConfig(null);
     router.push('/play');
   }
-  
-  const getBotName = (rating: number) => {
-    const ratings = Object.keys(botRatingMap).map(Number);
-    const closestRating = ratings.reduce((prev, curr) => 
-      (Math.abs(curr - rating) < Math.abs(prev - rating) ? curr : prev)
-    );
-    return botRatingMap[closestRating];
-  }
 
-  if (params.game && params.game[0] === 'bot') {
-    const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
-
-    useState(() => {
-        const configStr = localStorage.getItem('botGameConfig');
-        if (configStr) {
-            setBotGameConfig(JSON.parse(configStr));
-        } else {
-            router.push('/play');
-        }
-    });
-
+  if (mode === 'bot') {
     if (botGameConfig) {
       return (
-        <div className="flex h-screen w-screen items-center justify-center bg-background p-4">
-           <Button variant="ghost" onClick={handleRequestLeave} className="absolute top-4 left-4">
-            <ChevronLeft className="h-5 w-5 mr-2" />
-            Exit Game
-          </Button>
-          <div className="flex justify-center">
-            <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
-              <CardHeader className="text-center">
-                <CardTitle>vs. {getBotName(botGameConfig.rating)} ({botGameConfig.rating})</CardTitle>
-                <CardDescription>
-                  You are playing against the AI. It's your move.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Chessboard
-                  key={gameState.rematchCounter}
-                  aiLevel={botGameConfig.rating}
-                  onGameOver={handleGameOver}
-                  playerColor={botGameConfig.color}
-                  boardTheme={boardTheme}
-                />
-              </CardContent>
-            </Card>
-          </div>
-          <GameOverDialog
-            result={gameState.gameResult}
-            onPlayAgain={handlePlayAgain}
-            onBackToMenu={handleBackToMenu}
-          />
-          <LeaveGameDialog
-            isOpen={gameState.showLeaveConfirm}
-            onCancel={handleCancelLeave}
-            onConfirm={handleConfirmLeave}
-          />
-        </div>
+        <BotGameScreen 
+          config={botGameConfig}
+          onExit={handleBackToModeSelection}
+          gameResult={gameResult}
+          onGameOver={setGameResult}
+          onRematch={() => setGameResult(null)}
+        />
       );
     }
-    return null;
+    return <BotGameSetup onStart={handleBotGameStart} onBack={handleBackToModeSelection} />;
   }
   
-  if (gameState.mode === 'bot') {
-    if (gameState.showBotSetup) {
-      return <BotGameSetup onStart={handleBotGameStart} onBack={handleBackToModeSelection} />;
-    }
-  }
-  
-  if (gameState.mode === 'friend') {
+  if (mode === 'friend') {
     return <FriendLobby onBack={handleBackToModeSelection} />;
   }
 
@@ -498,3 +475,5 @@ export default function PlayPage() {
     </div>
   );
 }
+
+    
