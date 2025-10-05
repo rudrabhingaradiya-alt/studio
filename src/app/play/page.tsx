@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -234,6 +235,31 @@ const GameOverDialog = ({
   );
 };
 
+const LeaveGameDialog = ({
+  isOpen,
+  onCancel,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) => (
+  <AlertDialog open={isOpen}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+        <AlertDialogDescription>
+          Your current game progress will be lost if you exit the match.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={onConfirm}>Yes, Leave</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+);
+
 
 export default function PlayPage() {
   const [gameState, setGameState] = useState<{
@@ -241,11 +267,13 @@ export default function PlayPage() {
     robotLevel: RobotLevel | null;
     gameResult: GameResult | null;
     rematchCounter: number;
+    showLeaveConfirm: boolean;
   }>({
     mode: null,
     robotLevel: null,
     gameResult: null,
     rematchCounter: 0,
+    showLeaveConfirm: false,
   });
 
   const handleModeSelect = (mode: GameMode) => {
@@ -277,6 +305,7 @@ export default function PlayPage() {
       robotLevel: null,
       gameResult: null,
       rematchCounter: 0,
+      showLeaveConfirm: false,
     });
   }
   
@@ -288,12 +317,23 @@ export default function PlayPage() {
     setGameState(prev => ({ ...prev, mode: null, robotLevel: null, gameResult: null }));
   }
 
+  const handleRequestLeave = () => {
+    setGameState(prev => ({ ...prev, showLeaveConfirm: true }));
+  }
+
+  const handleCancelLeave = () => {
+    setGameState(prev => ({ ...prev, showLeaveConfirm: false }));
+  }
+  
+  const handleConfirmLeave = () => {
+    setGameState(prev => ({ ...prev, robotLevel: null, gameResult: null, showLeaveConfirm: false }));
+  }
 
   if (gameState.mode === 'robot') {
     if (gameState.robotLevel) {
       return (
         <div className="container mx-auto px-4 py-8 md:py-12">
-           <Button variant="ghost" onClick={handleBackToRobotSelection} className="mb-4">
+           <Button variant="ghost" onClick={handleRequestLeave} className="mb-4">
             <ChevronLeft className="h-5 w-5 mr-2" />
             Back to robot selection
           </Button>
@@ -318,6 +358,11 @@ export default function PlayPage() {
             result={gameState.gameResult}
             onPlayAgain={handlePlayAgain}
             onBackToMenu={handleBackToMenu}
+          />
+          <LeaveGameDialog
+            isOpen={gameState.showLeaveConfirm}
+            onCancel={handleCancelLeave}
+            onConfirm={handleConfirmLeave}
           />
         </div>
       );
