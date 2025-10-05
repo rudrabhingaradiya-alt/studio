@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, ArrowLeft, RotateCw } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, RotateCw, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PuzzlePage() {
@@ -27,6 +28,7 @@ export default function PuzzlePage() {
 
   const [puzzleState, setPuzzleState] = useState<'solving' | 'correct' | 'incorrect'>('solving');
   const [key, setKey] = useState(0); // to reset the board
+  const [showSolution, setShowSolution] = useState(false);
 
   const handleCorrect = () => {
     setPuzzleState('correct');
@@ -49,6 +51,7 @@ export default function PuzzlePage() {
   const resetPuzzle = () => {
     setPuzzleState('solving');
     setKey(prev => prev + 1);
+    setShowSolution(false);
   }
 
   if (!puzzle) {
@@ -123,10 +126,25 @@ export default function PuzzlePage() {
                   </AlertDescription>
                 </Alert>
               )}
-               <Button onClick={resetPuzzle} variant="outline" className="w-full">
-                  <RotateCw className="mr-2 h-4 w-4" />
-                  Reset Puzzle
-                </Button>
+               <div className="flex gap-2">
+                <Button onClick={resetPuzzle} variant="outline" className="w-full">
+                    <RotateCw className="mr-2 h-4 w-4" />
+                    Reset Puzzle
+                  </Button>
+                  <Button onClick={() => setShowSolution(true)} variant="secondary" className="w-full">
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                    Show Solution
+                  </Button>
+               </div>
+               {showSolution && (
+                  <Alert variant="default" className="border-blue-500 bg-blue-50 dark:bg-blue-900/50">
+                    <Lightbulb className="h-4 w-4 text-blue-500" />
+                    <AlertTitle>Solution</AlertTitle>
+                    <AlertDescription>
+                      The correct move is: <strong>{puzzle.solution[0]}</strong>
+                    </AlertDescription>
+                  </Alert>
+                )}
             </CardContent>
           </Card>
         </div>
