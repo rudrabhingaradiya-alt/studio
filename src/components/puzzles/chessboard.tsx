@@ -487,6 +487,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
 
             const isSelected = selectedPiece && selectedPiece[0] === originalRow && selectedPiece[1] === originalCol;
             const isPossibleMove = possibleMoves.some(([r, c]) => r === originalRow && c === originalCol);
+            const pieceColor = getPieceColor(piece);
 
             return (
               <div
@@ -505,7 +506,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ initialBoard, isStatic=false, a
                  {isPossibleMove && displayBoard[rowIndex][colIndex] && (
                   <div className="absolute h-[90%] w-[90%] rounded-full border-4 border-black/20" />
                 )}
-                <span className="text-4xl md:text-5xl relative" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                <span className={cn("text-4xl md:text-5xl relative", {
+                    "text-stone-100 [text-shadow:_0_2px_2px_rgb(0_0_0_/_60%)]": pieceColor === 'white',
+                    "text-stone-800 [text-shadow:_0_2px_2px_rgb(255_255_255_/_20%)]": pieceColor === 'black',
+                })}>
                   {piece && pieceToUnicode[piece]}
                 </span>
               </div>
