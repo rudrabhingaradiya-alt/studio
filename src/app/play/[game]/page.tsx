@@ -32,10 +32,66 @@ type GameMode = 'bot' | 'online' | 'friend';
 type PlayerColor = 'white' | 'black' | 'random';
 
 const botLevels: { rating: number; name: string }[] = [
-  { rating: 200, name: "Newcomer" }, { rating: 400, name: "Beginner" }, { rating: 600, name: "Novice" }, 
-  { rating: 800, name: "Intermediate" }, { rating: 1000, name: "Adept" }, { rating: 1200, name: "Skilled" },
-  { rating: 1500, name: "Expert" }, { rating: 2000, name: "Master" }, { rating: 2500, name: "Grandmaster" },
-  { rating: 2800, name: "Super Grandmaster" }, { rating: 3200, name: "Stockfish" }
+    { rating: 250, name: "Newcomer" },
+    { rating: 300, name: "Rookie" },
+    { rating: 350, name: "Apprentice" },
+    { rating: 400, name: "Beginner" },
+    { rating: 450, name: "Novice" },
+    { rating: 500, name: "Learner" },
+    { rating: 550, name: "Aspirant" },
+    { rating: 600, name: "Hobbyist" },
+    { rating: 650, name: "Enthusiast" },
+    { rating: 700, name: "Player" },
+    { rating: 750, name: "Regular" },
+    { rating: 800, name: "Intermediate" },
+    { rating: 850, name: "Club Player" },
+    { rating: 900, name: "Steady" },
+    { rating: 950, name: "Experienced" },
+    { rating: 1000, name: "Adept" },
+    { rating: 1050, name: "Strategist" },
+    { rating: 1100, name: "Tactician" },
+    { rating: 1150, name: "Advanced" },
+    { rating: 1200, name: "Skilled" },
+    { rating: 1250, name: "Proficient" },
+    { rating: 1300, name: "Challenger" },
+    { rating: 1350, name: "Veteran" },
+    { rating: 1400, name: "Sharp" },
+    { rating: 1450, name: "Seasoned" },
+    { rating: 1500, name: "Expert" },
+    { rating: 1550, name: "Specialist" },
+    { rating: 1600, name: "Candidate" },
+    { rating: 1650, name: "Strong" },
+    { rating: 1700, name: "Elite" },
+    { rating: 1750, name: "Dominant" },
+    { rating: 1800, name: "Formidable" },
+    { rating: 1850, name: "Mighty" },
+    { rating: 1900, name: "Fierce" },
+    { rating: 1950, name: "Tournament Pro" },
+    { rating: 2000, name: "Master" },
+    { rating: 2050, name: "Senior Master" },
+    { rating: 2100, name: "National Master" },
+    { rating: 2150, name: "FIDE Master" },
+    { rating: 2200, name: "International Master" },
+    { rating: 2250, name: "Grandmaster Candidate" },
+    { rating: 2300, name: "Grandmaster" },
+    { rating: 2350, name: "Super Grandmaster" },
+    { rating: 2400, name: "Champion" },
+    { rating: 2450, name: "World Class" },
+    { rating: 2500, name: "Legend" },
+    { rating: 2550, name: "Titan" },
+    { rating: 2600, name: "Virtuoso" },
+    { rating: 2650, name: "Genius" },
+    { rating: 2700, name: "Prodigy" },
+    { rating: 2750, name: "Phenom" },
+    { rating: 2800, name: "Maestro" },
+    { rating: 2850, name: "The Oracle" },
+    { rating: 2900, name: "The Thinker" },
+    { rating: 2950, name: "The Engine" },
+    { rating: 3000, name: "The Centaur" },
+    { rating: 3050, name: "Deep Thought" },
+    { rating: 3100, name: "Alpha" },
+    { rating: 3150, name: "Stockfish Level" },
+    { rating: 3200, name: "Ultimate AI" }
 ];
 
 interface BotGameConfig {
@@ -468,3 +524,6 @@ export default function GamePage() {
   );
 }
 
+
+
+    
