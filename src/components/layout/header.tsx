@@ -3,7 +3,6 @@
 
 import Link from 'next/link';
 import { Menu, User } from 'lucide-react';
-import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,67 +20,54 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/context/auth-context';
 
 const navLinks = [
   { href: '/play', label: 'Play' },
   { href: '/puzzles', label: 'Puzzles' },
 ];
 
+const UserDropdown = () => {
+  const { isLoggedIn, login, logout } = useAuth();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <User className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">
+              {isLoggedIn ? 'Player One' : 'Guest'}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {isLoggedIn
+                ? 'player.one@chessarena.com'
+                : 'guest@chessarena.com'}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {isLoggedIn ? (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/profile">Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
+          </>
+        ) : (
+          <DropdownMenuItem onClick={login}>Log in</DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const Header = () => {
-  const [isNavVisible, setIsNavVisible] = useState(false);
-
-  const handleLoginForNav = (status: boolean) => {
-    setIsNavVisible(status);
-  };
-
-  const PatchedUserDropdown = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-    const handleLogin = () => {
-      setIsLoggedIn(true);
-      handleLoginForNav(true);
-    };
-
-    const handleLogout = () => {
-      setIsLoggedIn(false);
-      handleLoginForNav(false);
-    };
-
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <User className="h-5 w-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">
-                {isLoggedIn ? 'Player One' : 'Guest'}
-              </p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {isLoggedIn
-                  ? 'player.one@chessarena.com'
-                  : 'guest@chessarena.com'}
-              </p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {isLoggedIn ? (
-            <>
-              <DropdownMenuItem asChild>
-                <Link href="/profile">Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
-            </>
-          ) : (
-            <DropdownMenuItem onClick={handleLogin}>Log in</DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
-  };
+  const { isLoggedIn } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -92,7 +78,7 @@ const Header = () => {
             <Logo className="h-6 w-6" />
             <span className="font-bold">Chess Arena</span>
           </Link>
-          {isNavVisible && (
+          {isLoggedIn && (
             <nav className="flex items-center space-x-6 text-sm font-medium">
               {navLinks.map((link) => (
                 <Link
@@ -124,7 +110,7 @@ const Header = () => {
                   </Link>
                 </SheetClose>
                 <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-                  {isNavVisible && (
+                  {isLoggedIn && (
                     <div className="flex flex-col space-y-3">
                       {navLinks.map((link) => (
                         <SheetClose asChild key={link.href}>
@@ -144,12 +130,12 @@ const Header = () => {
             <span className="font-bold">Chess Arena</span>
           </Link>
 
-          <PatchedUserDropdown />
+          <UserDropdown />
         </div>
 
         {/* Desktop User Menu */}
         <div className="hidden flex-1 items-center justify-end md:flex">
-          <PatchedUserDropdown />
+          <UserDropdown />
         </div>
       </div>
     </header>
@@ -157,5 +143,3 @@ const Header = () => {
 };
 
 export default Header;
-
-    

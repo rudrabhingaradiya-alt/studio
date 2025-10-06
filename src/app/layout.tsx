@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import { ThemeProvider } from '@/context/theme-context';
+import { AuthProvider } from '@/context/auth-context';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -70,12 +71,14 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ThemeProvider>
-          <div className="flex min-h-screen flex-col">
-            {!dynamicGamePath && <Header />}
-            <main className="flex-grow">{children}</main>
-            {!dynamicGamePath && <Footer />}
-          </div>
-          <Toaster />
+          <AuthProvider>
+            <div className="flex min-h-screen flex-col">
+              {!dynamicGamePath && <Header />}
+              <main className="flex-grow">{children}</main>
+              {!dynamicGamePath && <Footer />}
+            </div>
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
