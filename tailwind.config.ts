@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 import { boardThemes } from './src/lib/board-themes';
 
@@ -101,5 +102,3 @@ export default {
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
-
-    
