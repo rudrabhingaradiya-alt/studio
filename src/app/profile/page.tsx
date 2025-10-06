@@ -35,6 +35,13 @@ import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/context/theme-context';
 import { boardThemes } from '@/lib/board-themes';
 import { cn } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Pie, PieChart, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const mockPuzzleHistory: PuzzleHistoryItem[] = [
   { puzzleId: 'pz301', attempts: 1, solved: true },
@@ -43,9 +50,11 @@ const mockPuzzleHistory: PuzzleHistoryItem[] = [
 ];
 
 const mockGameHistory: GameHistoryItem[] = [
-    { opponent: 'Bot (Beginner)', result: 'Win', date: '2024-07-28' },
-    { opponent: 'Bot (Intermediate)', result: 'Loss', date: '2024-07-27' },
-    { opponent: 'Bot (Adept)', result: 'Draw', date: '2024-07-26' },
+    { opponent: 'Bot (Beginner)', result: 'Win', date: '2024-07-28', ratingChange: 8, rating: 1180 },
+    { opponent: 'Bot (Intermediate)', result: 'Loss', date: '2024-07-27', ratingChange: -7, rating: 1172 },
+    { opponent: 'Bot (Adept)', result: 'Draw', date: '2024-07-26', ratingChange: 0, rating: 1179 },
+    { opponent: 'Bot (Intermediate)', result: 'Win', date: '2024-07-25', ratingChange: 9, rating: 1179 },
+    { opponent: 'Bot (Expert)', result: 'Loss', date: '2024-07-24', ratingChange: -5, rating: 1170 },
 ];
 
 export default function ProfilePage() {
@@ -83,11 +92,28 @@ export default function ProfilePage() {
         return <Badge variant="secondary">Draw</Badge>;
     }
   }
+  
+  const wins = mockGameHistory.filter((g) => g.result === 'Win').length;
+  const losses = mockGameHistory.filter((g) => g.result === 'Loss').length;
+  const draws = mockGameHistory.filter((g) => g.result === 'Draw').length;
+  const totalGames = mockGameHistory.length;
+
+  const gameStatsData = [
+    { stat: 'wins', value: wins, fill: 'hsl(var(--chart-2))' },
+    { stat: 'losses', value: losses, fill: 'hsl(var(--destructive))' },
+    { stat: 'draws', value: draws, fill: 'hsl(var(--muted-foreground))' },
+  ];
+
+  const chartConfig: ChartConfig = {
+    wins: { label: 'Wins', color: 'hsl(var(--chart-2))' },
+    losses: { label: 'Losses', color: 'hsl(var(--destructive))' },
+    draws: { label: 'Draws', color: 'hsl(var(--muted-foreground))' },
+  };
 
   const userStats = {
     rating: 1200,
-    wins: mockGameHistory.filter(g => g.result === 'Win').length,
-    losses: mockGameHistory.filter(g => g.result === 'Loss').length,
+    wins: wins,
+    losses: losses,
   };
 
   return (
@@ -140,6 +166,54 @@ export default function ProfilePage() {
         </Card>
       </div>
 
+       <div className="grid gap-8 md:grid-cols-2 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Game Statistics</CardTitle>
+            <CardDescription>Your performance breakdown.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <ChartContainer
+                config={chartConfig}
+                className="mx-auto aspect-square h-[250px]"
+              >
+                <PieChart>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Pie
+                    data={gameStatsData}
+                    dataKey="value"
+                    nameKey="stat"
+                    innerRadius={60}
+                  />
+                </PieChart>
+              </ChartContainer>
+          </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Rating History</CardTitle>
+                <CardDescription>Your rating progression over the last few games.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{}} className="h-[250px] w-full">
+                    <LineChart
+                        data={mockGameHistory.slice().reverse()}
+                        margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}/>
+                        <YAxis domain={['dataMin - 20', 'dataMax + 20']} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="rating" stroke="hsl(var(--primary))" strokeWidth={2} dot={{r:4}} />
+                    </LineChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+      </div>
+
       <div className="mb-8">
         <Card>
           <CardHeader>
@@ -156,6 +230,7 @@ export default function ProfilePage() {
                   <TableHead>Opponent</TableHead>
                   <TableHead>Result</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Rating Change</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -164,6 +239,9 @@ export default function ProfilePage() {
                     <TableCell>{game.opponent}</TableCell>
                     <TableCell>{getResultBadge(game.result)}</TableCell>
                     <TableCell>{new Date(game.date).toLocaleDateString()}</TableCell>
+                    <TableCell className={cn(game.ratingChange > 0 ? 'text-green-500' : game.ratingChange < 0 ? 'text-red-500' : 'text-muted-foreground')}>
+                        {game.ratingChange > 0 ? `+${game.ratingChange}`: game.ratingChange}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -1,3 +1,4 @@
+
 export interface PuzzleHistoryItem {
   puzzleId: string;
   attempts: number;
@@ -8,9 +9,13 @@ export interface GameHistoryItem {
   opponent: string;
   result: 'Win' | 'Loss' | 'Draw';
   date: string;
+  ratingChange: number;
+  rating: number;
 }
 
 export interface PuzzleRecommendation {
   puzzleId: string;
   description: string;
 }
+
+    
