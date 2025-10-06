@@ -70,16 +70,16 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <ThemeProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <ThemeProvider>
             <div className="flex min-h-screen flex-col">
               {!dynamicGamePath && <Header />}
               <main className="flex-grow">{children}</main>
               {!dynamicGamePath && <Footer />}
             </div>
             <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
