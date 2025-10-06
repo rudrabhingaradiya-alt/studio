@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -558,7 +559,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                 )}
                 <span className={cn("text-4xl md:text-5xl relative drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)] z-10", {
                     "text-stone-100": pieceColor === 'white',
-                    "text-stone-800": pieceColor === 'black',
+                    "text-black": pieceColor === 'black',
                 })}>
                   {piece && pieceToUnicode[piece]}
                 </span>
