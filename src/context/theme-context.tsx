@@ -13,7 +13,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [boardTheme, setBoardTheme] = useState('default');
   const [isMounted, setIsMounted] = useState(false);
   
@@ -24,6 +24,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     
     if (storedDarkMode !== null) {
       setIsDarkMode(JSON.parse(storedDarkMode));
+    } else {
+      setIsDarkMode(false);
     }
     if (storedBoardTheme !== null) {
       setBoardTheme(storedBoardTheme);
