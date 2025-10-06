@@ -277,7 +277,7 @@ const FriendLobby = ({ onBack }: { onBack: () => void }) => {
           Back
         </Button>
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
-          Play with a Friend
+          Friendly Match
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Create or join a private game to start.
@@ -621,7 +621,7 @@ const gameModes: {
   },
   {
     id: 'friend',
-    title: 'Play with a Friend',
+    title: 'Friendly Match',
     description: 'Invite a friend to a game using a private link.',
     icon: User,
     isAvailable: true,

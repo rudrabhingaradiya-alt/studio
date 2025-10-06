@@ -43,7 +43,7 @@ const gameModes = [
   },
   {
     id: 'friend' as GameModeId,
-    title: 'Play with a Friend',
+    title: 'Friendly Match',
     description: 'Invite a friend to a game using a private link.',
     icon: User,
     isAvailable: true,
