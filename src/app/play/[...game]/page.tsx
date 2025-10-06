@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -484,7 +483,6 @@ export default function PlayPage() {
   const router = useRouter();
   const params = useParams();
   
-  // 'select', 'setup-bot', 'play-bot', 'lobby-friend'
   const [view, setView] = useState<'select' | 'setup-bot' | 'play-bot' | 'lobby-friend'>('select');
   const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
@@ -496,6 +494,8 @@ export default function PlayPage() {
     } else if (gameParam === 'friend') {
       setView('lobby-friend');
     } else if (gameParam && gameParam.startsWith('game_')) {
+      // In a real app, this is where you would handle joining a friend's game.
+      // For now, we'll just show the lobby.
       setView('lobby-friend');
     } else {
       setView('select');
@@ -627,7 +627,5 @@ const gameModes: {
     isAvailable: true,
   },
 ];
-
-    
 
     
