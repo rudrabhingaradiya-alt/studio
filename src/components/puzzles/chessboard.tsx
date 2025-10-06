@@ -304,7 +304,7 @@ const getPositionalValue = (piece: Piece, row: number, col: number) => {
 }
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel=800, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default' }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel = 200, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default' }) => {
   const [initialBoard, initialTurn] = useMemo(() => puzzle ? fenToBoard(puzzle.fen) : [defaultBoard, 'white' as PlayerTurn], [puzzle]);
 
   const [board, setBoard] = useState<Board>(initialBoard);
@@ -387,6 +387,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                                     moveValue += 0.5;
                                 }
                             }
+                            
+                            if (Math.random() > (aiLevel / 3500)) { // Add randomness based on aiLevel
+                              moveValue += Math.random() * 2 - 1;
+                            }
 
                             if (moveValue > bestValue) {
                                 bestValue = moveValue;
@@ -419,7 +423,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     } else {
         checkEndGame(currentBoard, aiColor);
     }
-  }, [checkEndGame, aiColor, playerColor]);
+  }, [checkEndGame, aiColor, playerColor, aiLevel]);
   
   useEffect(() => {
     if (turn === aiColor && !isStatic && !isGameOver && !puzzle) {
@@ -589,3 +593,5 @@ const isLight = (row: number, col: number) => (row + col) % 2 !== 0;
 
 
 export default Chessboard;
+
+    
