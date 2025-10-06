@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -237,7 +238,9 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
 
 const FriendLobby = ({ onBack }: { onBack: () => void }) => {
   const [gameLink, setGameLink] = useState('');
+  const [joinLink, setJoinLink] = useState('');
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleCreateGame = () => {
     const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
@@ -255,6 +258,18 @@ const FriendLobby = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
+  const handleJoinGame = () => {
+    if (joinLink && joinLink.includes('/play/game_')) {
+      router.push(joinLink);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Link',
+        description: 'Please paste a valid game link to join.',
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
       <div className="relative mx-auto max-w-2xl text-center">
@@ -266,14 +281,14 @@ const FriendLobby = ({ onBack }: { onBack: () => void }) => {
           Play with a Friend
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Create a private game and share the link with your friend to start.
+          Create or join a private game to start.
         </p>
       </div>
 
-      <div className="mt-12 mx-auto max-w-md">
+      <div className="mt-12 mx-auto max-w-md grid gap-8">
         <Card>
           <CardHeader>
-            <CardTitle>Create Your Game</CardTitle>
+            <CardTitle>Create a Game</CardTitle>
             <CardDescription>
               {gameLink ? 'Share this link with your friend.' : 'Click the button to generate a unique game link.'}
             </CardDescription>
@@ -297,6 +312,25 @@ const FriendLobby = ({ onBack }: { onBack: () => void }) => {
                 Waiting for friend to join...
               </p>
             )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Join a Game</CardTitle>
+            <CardDescription>
+              Paste a game link below to join your friend's match.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+             <div className="flex items-center space-x-2">
+                <Input 
+                    placeholder="Paste game link here..." 
+                    value={joinLink}
+                    onChange={(e) => setJoinLink(e.target.value)}
+                />
+                <Button onClick={handleJoinGame}>Join</Button>
+              </div>
           </CardContent>
         </Card>
       </div>
