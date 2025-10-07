@@ -16,24 +16,26 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [boardTheme, setBoardTheme] = useState('default');
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
     setIsMounted(true);
-    const storedDarkMode = localStorage.getItem('isDarkMode');
-    const storedBoardTheme = localStorage.getItem('boardTheme');
-    
-    if (storedDarkMode !== null) {
-      setIsDarkMode(JSON.parse(storedDarkMode));
-    } else {
-      setIsDarkMode(true);
-    }
-    if (storedBoardTheme !== null) {
-      setBoardTheme(storedBoardTheme);
+    try {
+      const storedDarkMode = localStorage.getItem('isDarkMode');
+      const storedBoardTheme = localStorage.getItem('boardTheme');
+      
+      if (storedDarkMode !== null) {
+        setIsDarkMode(JSON.parse(storedDarkMode));
+      }
+      if (storedBoardTheme !== null) {
+        setBoardTheme(storedBoardTheme);
+      }
+    } catch (error) {
+      console.error('Failed to parse theme from localStorage', error);
     }
   }, []);
 
   useEffect(() => {
-    if(isMounted) {
+    if (isMounted) {
       const root = window.document.documentElement;
       if (isDarkMode) {
         root.classList.add('dark');
@@ -45,7 +47,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isDarkMode, isMounted]);
 
   useEffect(() => {
-    if(isMounted) {
+    if (isMounted) {
       localStorage.setItem('boardTheme', boardTheme);
     }
   }, [boardTheme, isMounted]);
@@ -56,6 +58,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     boardTheme,
     setBoardTheme,
   };
+
+  if (!isMounted) {
+    // Return null or a loading spinner on the server and initial client render
+    return null;
+  }
 
   return (
     <ThemeContext.Provider value={value}>

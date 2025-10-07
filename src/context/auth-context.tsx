@@ -14,25 +14,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
     setIsMounted(true);
-    const storedAuth = localStorage.getItem('isLoggedIn');
-    if (storedAuth) {
-      setIsLoggedIn(JSON.parse(storedAuth));
+    try {
+      const storedAuth = localStorage.getItem('isLoggedIn');
+      if (storedAuth) {
+        setIsLoggedIn(JSON.parse(storedAuth));
+      }
+    } catch (error) {
+      console.error('Failed to parse auth status from localStorage', error);
     }
   }, []);
 
   const login = () => {
     setIsLoggedIn(true);
-     if(isMounted) {
+    if (typeof window !== 'undefined') {
       localStorage.setItem('isLoggedIn', JSON.stringify(true));
     }
   };
 
   const logout = () => {
     setIsLoggedIn(false);
-     if(isMounted) {
+    if (typeof window !== 'undefined') {
       localStorage.setItem('isLoggedIn', JSON.stringify(false));
     }
   };
@@ -42,6 +46,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     login,
     logout,
   };
+  
+  // Prevent rendering children until mounted on the client
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <AuthContext.Provider value={value}>
