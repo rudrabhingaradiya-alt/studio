@@ -9,6 +9,8 @@ import {
   type PuzzleSelectionInput,
 } from '@/ai/flows/personalized-puzzle-difficulty';
 import { generateBotAvatar, BotAvatarInput } from '@/ai/flows/bot-avatar-generator';
+import { createBot, CreateBotInput } from '@/ai/flows/create-bot-flow';
+
 
 export async function getPuzzleRecommendations(
   input: PuzzleRecommendationInput
@@ -42,5 +44,16 @@ export async function getBotAvatar(input: BotAvatarInput) {
         const error = e instanceof Error ? e.message : 'An unknown error occurred.';
         console.error('Bot avatar generation failed:', error);
         return { avatar: null, error };
+    }
+}
+
+export async function getNewBot(input: CreateBotInput) {
+    try {
+        const result = await createBot(input);
+        return { bot: result, error: null };
+    } catch (e) {
+        const error = e instanceof Error ? e.message : 'An unknown error occurred.';
+        console.error('New bot creation failed:', error);
+        return { bot: null, error };
     }
 }

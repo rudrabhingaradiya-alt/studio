@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle } from 'lucide-react';
+import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +27,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTheme } from '@/context/theme-context';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { botLevels, BotLevel } from '@/lib/bots';
+import { botLevels as initialBotLevels, BotLevel } from '@/lib/bots';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getNewBot } from '@/app/actions';
+import { Textarea } from '@/components/ui/textarea';
 
 
 interface BotGameConfig {
@@ -37,7 +39,79 @@ interface BotGameConfig {
   timeControl: string;
 }
 
+const BotGenerator = ({ onBotCreated }: { onBotCreated: (newBot: BotLevel) => void }) => {
+    const [name, setName] = useState('');
+    const [prompt, setPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const { toast } = useToast();
+
+    const handleGenerate = async () => {
+        if (!name || !prompt) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing fields',
+                description: 'Please provide a name and a prompt for your bot.',
+            });
+            return;
+        }
+        setIsGenerating(true);
+        const { bot, error } = await getNewBot({ name, prompt });
+        if (error || !bot) {
+            toast({
+                variant: 'destructive',
+                title: 'Generation Failed',
+                description: error || 'Could not create the bot. Please try again.',
+            });
+        } else {
+            onBotCreated({
+                name,
+                rating: bot.rating,
+                personality: bot.personality,
+                avatar: bot.avatar,
+            });
+            toast({
+                title: 'Bot Created!',
+                description: `Say hello to ${name}.`,
+            });
+            setName('');
+            setPrompt('');
+        }
+        setIsGenerating(false);
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Wand2 />
+                    Create a Bot
+                </CardTitle>
+                <CardDescription>Use AI to generate a new chess opponent.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="bot-name">Bot Name</Label>
+                    <Input id="bot-name" placeholder="e.g., 'Captain Blunder'" value={name} onChange={e => setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="bot-prompt">Bot Prompt</Label>
+                    <Textarea id="bot-prompt" placeholder="e.g., 'A chaotic pirate who loves risky moves.'" value={prompt} onChange={e => setPrompt(e.target.value)} />
+                </div>
+                <Button className="w-full" onClick={handleGenerate} disabled={isGenerating}>
+                    {isGenerating ? (
+                        <>
+                            <Loader2 className="animate-spin mr-2" />
+                            Generating...
+                        </>
+                    ) : 'Generate Bot'}
+                </Button>
+            </CardContent>
+        </Card>
+    )
+}
+
 const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) => void; onBack: () => void }) => {
+  const [botLevels, setBotLevels] = useState<BotLevel[]>(initialBotLevels);
   const [selectedLevel, setSelectedLevel] = useState<number>(botLevels[0].rating);
   const [config, setConfig] = useState<BotGameConfig>({
     rating: botLevels[0].rating,
@@ -52,6 +126,12 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
       setUnlockedLevel(parseInt(storedUnlockedLevel, 10));
     }
   }, []);
+  
+  const handleNewBot = (newBot: BotLevel) => {
+    const updatedBots = [...botLevels, newBot].sort((a, b) => a.rating - b.rating);
+    setBotLevels(updatedBots);
+    handleLevelSelect(newBot.rating);
+  }
 
   const handleLevelSelect = (rating: number) => {
     setSelectedLevel(rating);
@@ -75,25 +155,25 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
           Challenge a Bot
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Defeat each level to unlock the next opponent.
+          Defeat each level to unlock the next opponent, or create your own.
         </p>
       </div>
 
-      <div className="mt-12 mx-auto max-w-5xl grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-2">
+      <div className="mt-12 mx-auto max-w-7xl grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
           <Card>
             <CardHeader>
                 <CardTitle>Select an Opponent</CardTitle>
             </CardHeader>
             <CardContent>
-                <ScrollArea className="h-[60vh]">
+                <ScrollArea className="h-[70vh]">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-1">
                     {botLevels.map(level => {
                       const isUnlocked = level.rating <= unlockedLevel;
                       const isSelected = selectedLevel === level.rating;
                       return (
                         <Card 
-                          key={level.rating}
+                          key={`${level.name}-${level.rating}`}
                           onClick={() => isUnlocked && handleLevelSelect(level.rating)}
                           className={cn(
                             "flex flex-col items-center justify-center p-4 transition-all aspect-square relative",
@@ -116,7 +196,7 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
             </CardContent>
           </Card>
         </div>
-        <div>
+        <div className="space-y-8">
             <Card>
             <CardHeader className="items-center">
                  <Avatar className="h-24 w-24 mb-2 border-4 border-primary">
@@ -170,6 +250,7 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
                 <Button className="w-full" size="lg" onClick={() => onStart(config)}>Challenge {selectedBot.name}</Button>
             </CardContent>
             </Card>
+            <BotGenerator onBotCreated={handleNewBot} />
         </div>
       </div>
     </div>
@@ -356,9 +437,9 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
 
     useEffect(() => {
         if (gameResult === 'checkmate-white') {
-            const currentLevelIndex = botLevels.findIndex(l => l.rating === config.rating);
-            if (currentLevelIndex !== -1 && currentLevelIndex < botLevels.length - 1) {
-                const nextLevel = botLevels[currentLevelIndex + 1];
+            const currentLevelIndex = initialBotLevels.findIndex(l => l.rating === config.rating);
+            if (currentLevelIndex !== -1 && currentLevelIndex < initialBotLevels.length - 1) {
+                const nextLevel = initialBotLevels[currentLevelIndex + 1];
                 const storedUnlockedLevel = parseInt(localStorage.getItem('unlockedBotLevel') || '0', 10);
                 if (nextLevel.rating > storedUnlockedLevel) {
                     localStorage.setItem('unlockedBotLevel', nextLevel.rating.toString());
@@ -373,7 +454,7 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
 
 
     const getBotName = (rating: number) => {
-        return botLevels.find(l => l.rating === rating)?.name || "Bot";
+        return initialBotLevels.find(l => l.rating === rating)?.name || "Bot";
     }
 
     const handlePlayAgain = () => {
