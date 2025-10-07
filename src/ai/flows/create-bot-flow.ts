@@ -85,17 +85,17 @@ const createBotFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {
-          text: `Generate a stylized, cartoon-like avatar for a chess bot. The avatar should be a headshot of a character that visually represents the bot's name, rating, and personality.
+          text: `Generate a photorealistic headshot avatar for a chess bot. The avatar should be a portrait of a man or a woman that visually represents the bot's name, rating, and personality.
 
 Bot Name: ${input.name}
 Rating: ${profile.rating}
 Personality: ${profile.personality}
 
 Style Guidelines:
-- Use a vibrant, modern, and slightly cartoonish art style.
-- The character should be expressive and memorable.
-- The background should be a simple, abstract gradient that complements the character.
-- The image should be square and suitable for use as a profile picture.
+- The avatar should be a high-quality, realistic photograph of a person.
+- The person's expression and appearance should match the bot's personality.
+- The background should be a simple, professional, or abstract setting suitable for a profile picture.
+- The image should be square.
 - Do NOT include any text, letters, or numbers in the image.`,
         },
       ],
