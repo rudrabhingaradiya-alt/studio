@@ -8,6 +8,7 @@ import {
   selectPuzzle,
   type PuzzleSelectionInput,
 } from '@/ai/flows/personalized-puzzle-difficulty';
+import { generateBotAvatar, BotAvatarInput } from '@/ai/flows/bot-avatar-generator';
 
 export async function getPuzzleRecommendations(
   input: PuzzleRecommendationInput
@@ -31,4 +32,15 @@ export async function getNextPuzzle(input: PuzzleSelectionInput) {
     console.error('Personalized puzzle selection failed:', error);
     return { data: null, error };
   }
+}
+
+export async function getBotAvatar(input: BotAvatarInput) {
+    try {
+        const result = await generateBotAvatar(input);
+        return { avatar: result.imageDataUri, error: null };
+    } catch (e) {
+        const error = e instanceof Error ? e.message : 'An unknown error occurred.';
+        console.error('Bot avatar generation failed:', error);
+        return { avatar: null, error };
+    }
 }

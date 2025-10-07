@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 
@@ -27,72 +27,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTheme } from '@/context/theme-context';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-type GameMode = 'bot' | 'online' | 'friend';
-type PlayerColor = 'white' | 'black' | 'random';
-
-const botLevels: { rating: number; name: string }[] = [
-    { rating: 250, name: "Newcomer" },
-    { rating: 300, name: "Rookie" },
-    { rating: 350, name: "Apprentice" },
-    { rating: 400, name: "Beginner" },
-    { rating: 450, name: "Novice" },
-    { rating: 500, name: "Learner" },
-    { rating: 550, name: "Aspirant" },
-    { rating: 600, name: "Hobbyist" },
-    { rating: 650, name: "Enthusiast" },
-    { rating: 700, name: "Player" },
-    { rating: 750, name: "Regular" },
-    { rating: 800, name: "Intermediate" },
-    { rating: 850, name: "Club Player" },
-    { rating: 900, name: "Steady" },
-    { rating: 950, name: "Experienced" },
-    { rating: 1000, name: "Adept" },
-    { rating: 1050, name: "Strategist" },
-    { rating: 1100, name: "Tactician" },
-    { rating: 1150, name: "Advanced" },
-    { rating: 1200, name: "Skilled" },
-    { rating: 1250, name: "Proficient" },
-    { rating: 1300, name: "Challenger" },
-    { rating: 1350, name: "Veteran" },
-    { rating: 1400, name: "Sharp" },
-    { rating: 1450, name: "Seasoned" },
-    { rating: 1500, name: "Expert" },
-    { rating: 1550, name: "Specialist" },
-    { rating: 1600, name: "Candidate" },
-    { rating: 1650, name: "Strong" },
-    { rating: 1700, name: "Elite" },
-    { rating: 1750, name: "Dominant" },
-    { rating: 1800, name: "Formidable" },
-    { rating: 1850, name: "Mighty" },
-    { rating: 1900, name: "Fierce" },
-    { rating: 1950, name: "Tournament Pro" },
-    { rating: 2000, name: "Master" },
-    { rating: 2050, name: "Senior Master" },
-    { rating: 2100, name: "National Master" },
-    { rating: 2150, name: "FIDE Master" },
-    { rating: 2200, name: "International Master" },
-    { rating: 2250, name: "Grandmaster Candidate" },
-    { rating: 2300, name: "Grandmaster" },
-    { rating: 2350, name: "Super Grandmaster" },
-    { rating: 2400, name: "Champion" },
-    { rating: 2450, name: "World Class" },
-    { rating: 2500, name: "Legend" },
-    { rating: 2550, name: "Titan" },
-    { rating: 2600, name: "Virtuoso" },
-    { rating: 2650, name: "Genius" },
-    { rating: 2700, name: "Prodigy" },
-    { rating: 2750, name: "Phenom" },
-    { rating: 2800, name: "Maestro" },
-    { rating: 2850, name: "The Oracle" },
-    { rating: 2900, name: "The Thinker" },
-    { rating: 2950, name: "The Engine" },
-    { rating: 3000, name: "The Centaur" },
-    { rating: 3050, name: "Deep Thought" },
-    { rating: 3100, name: "Alpha" },
-    { rating: 3150, name: "Stockfish Level" },
-    { rating: 3200, name: "Ultimate AI" }
-];
+import { botLevels, BotLevel } from '@/lib/bots';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 interface BotGameConfig {
@@ -122,9 +58,11 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
     setConfig(prev => ({ ...prev, rating }));
   };
   
-  const getBotName = (rating: number) => {
-    return botLevels.find(l => l.rating === rating)?.name || "Bot";
+  const getBot = (rating: number): BotLevel | undefined => {
+    return botLevels.find(l => l.rating === rating);
   }
+
+  const selectedBot = getBot(selectedLevel) ?? botLevels[0];
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
@@ -137,19 +75,19 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
           Challenge a Bot
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Defeat each level to unlock the next.
+          Defeat each level to unlock the next opponent.
         </p>
       </div>
 
-      <div className="mt-12 mx-auto max-w-3xl grid md:grid-cols-2 gap-8">
-        <div>
+      <div className="mt-12 mx-auto max-w-5xl grid md:grid-cols-3 gap-8">
+        <div className="md:col-span-2">
           <Card>
             <CardHeader>
-                <CardTitle>Select a Level</CardTitle>
+                <CardTitle>Select an Opponent</CardTitle>
             </CardHeader>
             <CardContent>
-                <ScrollArea className="h-72">
-                  <div className="space-y-2">
+                <ScrollArea className="h-[60vh]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-1">
                     {botLevels.map(level => {
                       const isUnlocked = level.rating <= unlockedLevel;
                       const isSelected = selectedLevel === level.rating;
@@ -158,16 +96,18 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
                           key={level.rating}
                           onClick={() => isUnlocked && handleLevelSelect(level.rating)}
                           className={cn(
-                            "flex items-center justify-between p-4 transition-all",
+                            "flex flex-col items-center justify-center p-4 transition-all aspect-square relative",
                             isUnlocked ? "cursor-pointer hover:border-primary" : "cursor-not-allowed bg-muted/50 opacity-70",
                             isSelected && isUnlocked && "border-primary ring-2 ring-primary"
                           )}
                         >
-                          <div>
-                              <h3 className="font-semibold">{level.name}</h3>
-                              <p className="text-sm text-muted-foreground">Rating: {level.rating}</p>
-                          </div>
-                          {isUnlocked ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Lock className="h-5 w-5 text-muted-foreground" />}
+                            {!isUnlocked && <Lock className="absolute top-2 right-2 h-4 w-4 text-muted-foreground z-10" />}
+                            <Avatar className="h-16 w-16 mb-2 border-2 border-muted">
+                                <AvatarImage src={level.avatar} alt={level.name} />
+                                <AvatarFallback>{level.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <h3 className="font-semibold text-sm text-center">{level.name}</h3>
+                            <p className="text-xs text-muted-foreground">Rating: {level.rating}</p>
                         </Card>
                       )
                     })}
@@ -178,14 +118,15 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
         </div>
         <div>
             <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Settings className="h-6 w-6"/> Game Settings</CardTitle>
+            <CardHeader className="items-center">
+                 <Avatar className="h-24 w-24 mb-2 border-4 border-primary">
+                    <AvatarImage src={selectedBot.avatar} alt={selectedBot.name} />
+                    <AvatarFallback>{selectedBot.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <CardTitle className="flex items-center gap-2">{selectedBot.name}</CardTitle>
+                <CardDescription>{selectedBot.personality}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8">
-                <div className="space-y-4">
-                <Label>Bot Strength: <span className="font-bold">{getBotName(config.rating)} ({config.rating})</span></Label>
-                </div>
-                
+            <CardContent className="space-y-6">
                 <div className="space-y-4">
                 <Label>Your Piece Color</Label>
                 <RadioGroup
@@ -226,7 +167,7 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
                 </Select>
                 </div>
                 
-                <Button className="w-full" size="lg" onClick={() => onStart(config)}>Start Game</Button>
+                <Button className="w-full" size="lg" onClick={() => onStart(config)}>Challenge {selectedBot.name}</Button>
             </CardContent>
             </Card>
         </div>
@@ -423,7 +364,7 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
                     localStorage.setItem('unlockedBotLevel', nextLevel.rating.toString());
                     toast({
                       title: 'Level Unlocked!',
-                      description: `You've unlocked the ${nextLevel.name} bot.`,
+                      description: `You've unlocked ${nextLevel.name}.`,
                     });
                 }
             }
@@ -598,6 +539,9 @@ export default function PlayPage() {
   );
 }
 
+type GameMode = 'bot' | 'online' | 'friend';
+type PlayerColor = 'white' | 'black' | 'random';
+
 const gameModes: {
   id: GameMode;
   title: string;
@@ -627,5 +571,3 @@ const gameModes: {
     isAvailable: true,
   },
 ];
-
-    
