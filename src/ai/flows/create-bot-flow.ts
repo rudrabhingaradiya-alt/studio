@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,7 +12,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const CreateBotInputSchema = z.object({
+const CreateBotInputSchema = z.object({
   name: z.string().describe('The name of the new chess bot.'),
   prompt: z
     .string()
@@ -19,7 +20,7 @@ export const CreateBotInputSchema = z.object({
 });
 export type CreateBotInput = z.infer<typeof CreateBotInputSchema>;
 
-export const CreateBotOutputSchema = z.object({
+const CreateBotOutputSchema = z.object({
   rating: z.number().describe("The bot's generated chess rating (e.g., 800, 1500, 2200)."),
   personality: z
     .string()
