@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -63,12 +64,13 @@ const BotGenerator = ({ onBotCreated }: { onBotCreated: (newBot: BotLevel) => vo
                 description: error || 'Could not create the bot. Please try again.',
             });
         } else {
-            onBotCreated({
+            const newBot: BotLevel = {
                 name,
                 rating: bot.rating,
                 personality: bot.personality,
                 avatar: bot.avatar,
-            });
+            };
+            onBotCreated(newBot);
             toast({
                 title: 'Bot Created!',
                 description: `Say hello to ${name}.`,
@@ -131,6 +133,10 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
     const updatedBots = [...botLevels, newBot].sort((a, b) => a.rating - b.rating);
     setBotLevels(updatedBots);
     handleLevelSelect(newBot.rating);
+    // Also unlock this new bot immediately
+    if (newBot.rating > unlockedLevel) {
+        setUnlockedLevel(newBot.rating);
+    }
   }
 
   const handleLevelSelect = (rating: number) => {
@@ -169,7 +175,7 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
                 <ScrollArea className="h-[70vh]">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-1">
                     {botLevels.map(level => {
-                      const isUnlocked = level.rating <= unlockedLevel;
+                      const isUnlocked = level.rating <= unlockedLevel || initialBotLevels.some(b => b.rating === level.rating);
                       const isSelected = selectedLevel === level.rating;
                       return (
                         <Card 
@@ -436,16 +442,20 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
     const { toast } = useToast();
 
     useEffect(() => {
-        if (gameResult === 'checkmate-white') {
-            const currentLevelIndex = initialBotLevels.findIndex(l => l.rating === config.rating);
-            if (currentLevelIndex !== -1 && currentLevelIndex < initialBotLevels.length - 1) {
-                const nextLevel = initialBotLevels[currentLevelIndex + 1];
+        if (gameResult === 'checkmate-white') { // Player wins
+            const allBots = [...initialBotLevels].sort((a,b) => a.rating - b.rating);
+            const currentLevelIndex = allBots.findIndex(l => l.rating === config.rating);
+            
+            if (currentLevelIndex !== -1 && currentLevelIndex < allBots.length - 1) {
+                const nextLevel = allBots[currentLevelIndex + 1];
                 const storedUnlockedLevel = parseInt(localStorage.getItem('unlockedBotLevel') || '0', 10);
+                
                 if (nextLevel.rating > storedUnlockedLevel) {
                     localStorage.setItem('unlockedBotLevel', nextLevel.rating.toString());
                     toast({
                       title: 'Level Unlocked!',
                       description: `You've unlocked ${nextLevel.name}.`,
+                      className: 'bg-green-500 text-white',
                     });
                 }
             }
@@ -454,7 +464,11 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
 
 
     const getBotName = (rating: number) => {
-        return initialBotLevels.find(l => l.rating === rating)?.name || "Bot";
+        const bot = initialBotLevels.find(l => l.rating === rating);
+        // Also check dynamically created bots
+        if (bot) return bot.name;
+        // This is a fallback, ideally we'd have the full list of bots available
+        return "Custom Bot";
     }
 
     const handlePlayAgain = () => {
@@ -652,3 +666,5 @@ const gameModes: {
     isAvailable: true,
   },
 ];
+
+    
