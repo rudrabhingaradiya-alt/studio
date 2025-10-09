@@ -307,30 +307,30 @@ export default function ProfilePage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="achievements" className="mt-8">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="achievements">Achievements</TabsTrigger>
+      <div className="mb-8">
+        <Card>
+            <CardHeader>
+            <CardTitle>Your Achievements</CardTitle>
+            <CardDescription>
+                Milestones and accomplishments on your chess journey.
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {achievements.map((achievement, index) => (
+                <AchievementCard key={index} {...achievement} />
+                ))}
+            </div>
+            </CardContent>
+        </Card>
+      </div>
+
+
+      <Tabs defaultValue="recommendations" className="mt-8">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="recommendations">AI Tools</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="achievements" className="mt-4">
-          <Card>
-             <CardHeader>
-              <CardTitle>Your Achievements</CardTitle>
-              <CardDescription>
-                Milestones and accomplishments on your chess journey.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {achievements.map((achievement, index) => (
-                  <AchievementCard key={index} {...achievement} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="recommendations" className="mt-4">
           <Card>
