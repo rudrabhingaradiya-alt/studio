@@ -1,21 +1,20 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2 } from 'lucide-react';
+import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, RotateCcw, Lightbulb, Trophy } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Chessboard, { GameResult } from '@/components/puzzles/chessboard';
+import Chessboard, { GameResult, Move } from '@/components/puzzles/chessboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -30,8 +29,11 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { botLevels as initialBotLevels, BotLevel } from '@/lib/bots';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getNewBot } from '@/app/actions';
+import { getNewBot, getGameAnalysis } from '@/app/actions';
 import { Textarea } from '@/components/ui/textarea';
+import type { GameAnalysisOutput } from '@/ai/flows/game-analysis-flow';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 interface BotGameConfig {
@@ -369,10 +371,12 @@ const GameOverDialog = ({
   result,
   onPlayAgain,
   onBackToMenu,
+  onGameReview
 }: {
   result: GameResult | null;
   onPlayAgain: () => void;
   onBackToMenu: () => void;
+  onGameReview: () => void;
 }) => {
   if (!result) return null;
 
@@ -397,12 +401,9 @@ const GameOverDialog = ({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <Button variant="outline" onClick={onBackToMenu}>
-            Back to Menu
-          </Button>
-          <Button onClick={onPlayAgain}>
-            Play Again
-          </Button>
+          <Button variant="secondary" onClick={onBackToMenu}>Back to Menu</Button>
+          <Button variant="outline" onClick={onPlayAgain}>Play Again</Button>
+          <Button onClick={onGameReview}><BarChart className="mr-2 h-4 w-4" /> Game Review</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -435,7 +436,7 @@ const LeaveGameDialog = ({
 );
 
 
-const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { config: BotGameConfig, onExit: () => void, onRematch: () => void, gameResult: GameResult | null, onGameOver: (result: GameResult) => void }) => {
+const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGameReview }: { config: BotGameConfig, onExit: () => void, onRematch: () => void, gameResult: GameResult | null, onGameOver: (result: GameResult, moveHistory: string[]) => void, onGameReview: () => void }) => {
     const { boardTheme } = useTheme();
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [rematchCounter, setRematchCounter] = useState(0);
@@ -505,6 +506,7 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
                 result={gameResult}
                 onPlayAgain={handlePlayAgain}
                 onBackToMenu={onExit}
+                onGameReview={onGameReview}
             />
             <LeaveGameDialog
                 isOpen={showLeaveConfirm}
@@ -515,13 +517,140 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver }: { 
     );
 }
 
+const GameReview = ({ analysis, moveHistory, onBack }: { analysis: GameAnalysisOutput, moveHistory: Move[], onBack: () => void }) => {
+    const { boardTheme } = useTheme();
+    const [currentMoveIndex, setCurrentMoveIndex] = useState(moveHistory.length - 1);
+
+    const moveClassificationStyles = {
+        brilliant: { icon: <Sparkles className="text-cyan-400" />, text: 'text-cyan-400', label: 'Brilliant' },
+        great: { icon: <CheckCircle className="text-blue-500" />, text: 'text-blue-500', label: 'Great' },
+        best: { icon: <CheckCircle className="text-green-500" />, text: 'text-green-500', label: 'Best' },
+        excellent: { icon: <CheckCircle className="text-green-400" />, text: 'text-green-400', label: 'Excellent' },
+        good: { icon: <CheckCircle className="text-lime-500" />, text: 'text-lime-500', label: 'Good' },
+        book: { icon: <BookOpen className="text-gray-400" />, text: 'text-gray-400', label: 'Book' },
+        inaccuracy: { icon: <AlertTriangle className="text-yellow-500" />, text: 'text-yellow-500', label: 'Inaccuracy' },
+        mistake: { icon: <AlertTriangle className="text-orange-500" />, text: 'text-orange-500', label: 'Mistake' },
+        miss: { icon: <XCircle className="text-purple-500" />, text: 'text-purple-500', label: 'Miss' },
+        blunder: { icon: <XCircle className="text-red-600" />, text: 'text-red-600', label: 'Blunder' },
+    };
+
+    const overallAccuracy = useMemo(() => {
+        const total = analysis.opening.accuracy + analysis.middlegame.accuracy + analysis.endgame.accuracy;
+        return Math.round(total / 3);
+    }, [analysis]);
+
+    return (
+        <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
+            <Button variant="ghost" onClick={onBack} className="mb-4">
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Back to Menu
+            </Button>
+            <div className="grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                    <Chessboard
+                        isStatic
+                        boardTheme={boardTheme}
+                        initialFen={moveHistory[currentMoveIndex]?.before}
+                    />
+                </div>
+                <div className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Game Review</CardTitle>
+                             <CardDescription>Overall Accuracy: {overallAccuracy}%</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <Label>Opening</Label>
+                                    <span className="text-sm font-bold">{analysis.opening.accuracy}%</span>
+                                </div>
+                                <Progress value={analysis.opening.accuracy} />
+                                <p className="text-xs text-muted-foreground mt-1">{analysis.opening.summary}</p>
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <Label>Middlegame</Label>
+                                    <span className="text-sm font-bold">{analysis.middlegame.accuracy}%</span>
+                                </div>
+                                <Progress value={analysis.middlegame.accuracy} />
+                                <p className="text-xs text-muted-foreground mt-1">{analysis.middlegame.summary}</p>
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <Label>Endgame</Label>
+                                    <span className="text-sm font-bold">{analysis.endgame.accuracy}%</span>
+                                </div>
+                                <Progress value={analysis.endgame.accuracy} />
+                                <p className="text-xs text-muted-foreground mt-1">{analysis.endgame.summary}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Move Analysis</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <ScrollArea className="h-64">
+                                <div className="flex flex-col gap-2">
+                                {analysis.moveAnalysis.map((move, index) => {
+                                    const styles = moveClassificationStyles[move.classification];
+                                    const moveNumber = Math.floor(index / 2) + 1;
+                                    const isWhiteMove = index % 2 === 0;
+
+                                    return (
+                                        <div 
+                                            key={index}
+                                            onClick={() => setCurrentMoveIndex(index + 1)}
+                                            className={cn(
+                                                "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                currentMoveIndex === index + 1 ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'
+                                            )}
+                                        >
+                                            <span className="w-8 text-sm text-muted-foreground">{isWhiteMove ? `${moveNumber}.` : ''}</span>
+                                            <span className="font-bold w-16">{move.move}</span>
+                                            <div className={cn("flex items-center gap-1", styles.text)}>
+                                                {styles.icon}
+                                                <span className="text-sm font-semibold">{styles.label}</span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                                </div>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Key Moments</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {analysis.keyMoments.map((moment, index) => (
+                                <Alert key={index} className="mb-2">
+                                    <Trophy className="h-4 w-4" />
+                                    <AlertTitle>Key Moment: {moment.move}</AlertTitle>
+                                    <AlertDescription>{moment.description}</AlertDescription>
+                                </Alert>
+                            ))}
+                        </CardContent>
+                     </Card>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function PlayPage() {
   const router = useRouter();
   const params = useParams();
   
-  const [view, setView] = useState<'select' | 'setup-bot' | 'play-bot' | 'lobby-friend'>('select');
+  const [view, setView] = useState<'select' | 'setup-bot' | 'play-bot' | 'lobby-friend' | 'review'>('select');
   const [botGameConfig, setBotGameConfig] = useState<BotGameConfig | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
+  const [gameAnalysis, setGameAnalysis] = useState<GameAnalysisOutput | null>(null);
+  const [moveHistory, setMoveHistory] = useState<Move[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   useEffect(() => {
     const gameParam = params.game?.[0];
@@ -547,19 +676,70 @@ export default function PlayPage() {
   const handleBotGameStart = (config: BotGameConfig) => {
     setBotGameConfig(config);
     setGameResult(null);
+    setGameAnalysis(null);
+    setMoveHistory([]);
     setView('play-bot');
   }
+
+  const handleGameOver = (result: GameResult, history: Move[]) => {
+      setGameResult(result);
+      setMoveHistory(history);
+  }
+
+  const handleGameReview = async () => {
+    setIsAnalyzing(true);
+    const sanMoveHistory = moveHistory.map(m => m.san);
+    const { analysis, error } = await getGameAnalysis({ moveHistory: sanMoveHistory });
+
+    if (error || !analysis) {
+        toast({
+            variant: 'destructive',
+            title: 'Analysis Failed',
+            description: 'Could not analyze the game at this time.'
+        });
+        setIsAnalyzing(false);
+        return;
+    }
+
+    setGameAnalysis(analysis);
+    setView('review');
+    setIsAnalyzing(false);
+  };
 
   const handleBackToModeSelection = () => {
     setView('select');
     setBotGameConfig(null);
     setGameResult(null);
+    setGameAnalysis(null);
+    setMoveHistory([]);
     router.push('/play', { scroll: false });
   }
 
   const handleRematch = () => {
     setGameResult(null);
+    setGameAnalysis(null);
+    setMoveHistory([]);
     // The key on the Chessboard component handles the reset
+  }
+
+  if (isAnalyzing) {
+    return (
+         <div className="flex h-screen w-screen items-center justify-center bg-background p-4 flex-col gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <h2 className="text-xl font-semibold text-muted-foreground">Analyzing your game...</h2>
+            <p className="text-muted-foreground">The AI is reviewing your moves.</p>
+        </div>
+    )
+  }
+
+  if (view === 'review' && gameAnalysis) {
+    return (
+      <GameReview 
+        analysis={gameAnalysis}
+        moveHistory={moveHistory}
+        onBack={handleBackToModeSelection}
+      />
+    );
   }
   
   if (view === 'play-bot' && botGameConfig) {
@@ -568,8 +748,9 @@ export default function PlayPage() {
         config={botGameConfig}
         onExit={handleBackToModeSelection}
         gameResult={gameResult}
-        onGameOver={setGameResult}
+        onGameOver={handleGameOver}
         onRematch={handleRematch}
+        onGameReview={handleGameReview}
       />
     );
   }

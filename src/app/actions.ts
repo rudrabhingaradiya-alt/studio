@@ -10,6 +10,7 @@ import {
 } from '@/ai/flows/personalized-puzzle-difficulty';
 import { generateBotAvatar, BotAvatarInput } from '@/ai/flows/bot-avatar-generator';
 import { createBot, CreateBotInput } from '@/ai/flows/create-bot-flow';
+import { analyzeGame, GameAnalysisInput } from '@/ai/flows/game-analysis-flow';
 
 
 export async function getPuzzleRecommendations(
@@ -55,5 +56,16 @@ export async function getNewBot(input: CreateBotInput) {
         const error = e instanceof Error ? e.message : 'An unknown error occurred.';
         console.error('New bot creation failed:', error);
         return { bot: null, error };
+    }
+}
+
+export async function getGameAnalysis(input: GameAnalysisInput) {
+    try {
+        const result = await analyzeGame(input);
+        return { analysis: result, error: null };
+    } catch (e) {
+        const error = e instanceof Error ? e.message : 'An unknown error occurred.';
+        console.error('Game analysis failed:', error);
+        return { analysis: null, error };
     }
 }
