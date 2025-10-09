@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, User } from 'lucide-react';
+import { Menu, User, TrendingUp } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -130,11 +130,25 @@ const Header = () => {
             <span className="font-bold">Chess Arena</span>
           </Link>
 
-          <UserDropdown />
+          <div className="flex items-center gap-2">
+            {isLoggedIn && (
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                1200
+              </div>
+            )}
+            <UserDropdown />
+          </div>
         </div>
 
         {/* Desktop User Menu */}
-        <div className="hidden flex-1 items-center justify-end md:flex">
+        <div className="hidden flex-1 items-center justify-end space-x-4 md:flex">
+          {isLoggedIn && (
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              Rating: 1200
+            </div>
+          )}
           <UserDropdown />
         </div>
       </div>
