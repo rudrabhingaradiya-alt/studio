@@ -61,36 +61,50 @@ export async function analyzeGame(input: GameAnalysisInput): Promise<GameAnalysi
 }
 
 
-const prompt = ai.definePrompt({
-  name: 'gameAnalysisPrompt',
-  input: {schema: GameAnalysisInputSchema},
-  output: {schema: GameAnalysisOutputSchema},
-  prompt: `You are a world-class chess grandmaster and coach. Your task is to analyze a chess game and provide a detailed review.
-
-Game Moves:
-{{#each moveHistory}}
-  {{this}}
-{{/each}}
-
-Please provide the following analysis:
-1.  **Move-by-move Analysis**: For each move, classify it as 'brilliant', 'great', 'best', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'miss', or 'blunder'. Provide a concise comment for significant moves (brilliant, blunder, mistake).
-2.  **Phase Accuracy**: Calculate a percentage accuracy score for the user's moves in the opening, middlegame, and endgame.
-3.  **Phase Summaries**: Write a one-sentence summary for each phase, highlighting strengths or weaknesses.
-4.  **Key Moments**: Identify 2-3 key moments, such as turning points or critical mistakes.
-
-Focus on providing constructive feedback to help the player learn. Your analysis should be returned in the specified JSON format.`,
-});
-
 const gameAnalysisFlow = ai.defineFlow(
   {
     name: 'gameAnalysisFlow',
     inputSchema: GameAnalysisInputSchema,
     outputSchema: GameAnalysisOutputSchema,
   },
-  async input => {
-    // In a real app, you might use a chess engine for more accurate analysis.
-    // Here we are relying on the LLM's chess knowledge.
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    const model = ai.model('googleai/gemini-2.5-flash');
+    const moveHistoryStr = input.moveHistory.join(' ');
+
+    const [moveAnalysis, phaseAnalysis, keyMoments] = await Promise.all([
+      ai.generate({
+        model,
+        prompt: `Analyze the following chess moves: ${moveHistoryStr}. Classify each move as 'brilliant', 'great', 'best', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'miss', or 'blunder'. Provide a concise comment for significant moves.`,
+        output: { schema: z.object({ moveAnalysis: z.array(MoveAnalysisSchema) }) },
+      }),
+      ai.generate({
+        model,
+        prompt: `Based on these moves: ${moveHistoryStr}, calculate percentage accuracy for opening, middlegame, and endgame. Provide a one-sentence summary for each phase.`,
+        output: {
+          schema: z.object({
+            opening: z.object({ accuracy: z.number(), summary: z.string() }),
+            middlegame: z.object({ accuracy: z.number(), summary: z.string() }),
+            endgame: z.object({ accuracy: z.number(), summary: z.string() }),
+          }),
+        },
+      }),
+      ai.generate({
+        model,
+        prompt: `From this game: ${moveHistoryStr}, identify 2-3 key moments (turning points, critical blunders).`,
+        output: {
+          schema: z.object({
+            keyMoments: z.array(z.object({ move: z.string(), description: z.string() })),
+          }),
+        },
+      }),
+    ]);
+
+    return {
+      moveAnalysis: moveAnalysis.output!.moveAnalysis,
+      opening: phaseAnalysis.output!.opening,
+      middlegame: phaseAnalysis.output!.middlegame,
+      endgame: phaseAnalysis.output!.endgame,
+      keyMoments: keyMoments.output!.keyMoments,
+    };
   }
 );

@@ -437,7 +437,7 @@ const LeaveGameDialog = ({
 );
 
 
-const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGameReview }: { config: BotGameConfig, onExit: () => void, onRematch: () => void, gameResult: GameResult | null, onGameOver: (result: GameResult, moveHistory: string[]) => void, onGameReview: () => void }) => {
+const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGameReview }: { config: BotGameConfig, onExit: () => void, onRematch: () => void, gameResult: GameResult | null, onGameOver: (result: GameResult, moveHistory: Move[]) => void, onGameReview: () => void }) => {
     const { boardTheme } = useTheme();
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [rematchCounter, setRematchCounter] = useState(0);
@@ -536,6 +536,7 @@ const GameReview = ({ analysis, moveHistory, onBack }: { analysis: GameAnalysisO
     };
 
     const overallAccuracy = useMemo(() => {
+        if (!analysis.opening || !analysis.middlegame || !analysis.endgame) return 0;
         const total = analysis.opening.accuracy + analysis.middlegame.accuracy + analysis.endgame.accuracy;
         return Math.round(total / 3);
     }, [analysis]);
@@ -561,81 +562,92 @@ const GameReview = ({ analysis, moveHistory, onBack }: { analysis: GameAnalysisO
                              <CardDescription>Overall Accuracy: {overallAccuracy}%</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <Label>Opening</Label>
-                                    <span className="text-sm font-bold">{analysis.opening.accuracy}%</span>
+                            {analysis.opening && (
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <Label>Opening</Label>
+                                        <span className="text-sm font-bold">{analysis.opening.accuracy}%</span>
+                                    </div>
+                                    <Progress value={analysis.opening.accuracy} />
+                                    <p className="text-xs text-muted-foreground mt-1">{analysis.opening.summary}</p>
                                 </div>
-                                <Progress value={analysis.opening.accuracy} />
-                                <p className="text-xs text-muted-foreground mt-1">{analysis.opening.summary}</p>
-                            </div>
-                            <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <Label>Middlegame</Label>
-                                    <span className="text-sm font-bold">{analysis.middlegame.accuracy}%</span>
+                            )}
+                            {analysis.middlegame && (
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <Label>Middlegame</Label>
+                                        <span className="text-sm font-bold">{analysis.middlegame.accuracy}%</span>
+                                    </div>
+                                    <Progress value={analysis.middlegame.accuracy} />
+                                    <p className="text-xs text-muted-foreground mt-1">{analysis.middlegame.summary}</p>
                                 </div>
-                                <Progress value={analysis.middlegame.accuracy} />
-                                <p className="text-xs text-muted-foreground mt-1">{analysis.middlegame.summary}</p>
-                            </div>
-                            <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <Label>Endgame</Label>
-                                    <span className="text-sm font-bold">{analysis.endgame.accuracy}%</span>
+                            )}
+                           {analysis.endgame && (
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <Label>Endgame</Label>
+                                        <span className="text-sm font-bold">{analysis.endgame.accuracy}%</span>
+                                    </div>
+                                    <Progress value={analysis.endgame.accuracy} />
+                                    <p className="text-xs text-muted-foreground mt-1">{analysis.endgame.summary}</p>
                                 </div>
-                                <Progress value={analysis.endgame.accuracy} />
-                                <p className="text-xs text-muted-foreground mt-1">{analysis.endgame.summary}</p>
-                            </div>
+                            )}
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Move Analysis</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <ScrollArea className="h-64">
-                                <div className="flex flex-col gap-2">
-                                {analysis.moveAnalysis.map((move, index) => {
-                                    const styles = moveClassificationStyles[move.classification];
-                                    const moveNumber = Math.floor(index / 2) + 1;
-                                    const isWhiteMove = index % 2 === 0;
+                    {analysis.moveAnalysis && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Move Analysis</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ScrollArea className="h-64">
+                                    <div className="flex flex-col gap-2">
+                                    {analysis.moveAnalysis.map((move, index) => {
+                                        const styles = moveClassificationStyles[move.classification];
+                                        const moveNumber = Math.floor(index / 2) + 1;
+                                        const isWhiteMove = index % 2 === 0;
 
-                                    return (
-                                        <div 
-                                            key={index}
-                                            onClick={() => setCurrentMoveIndex(index + 1)}
-                                            className={cn(
-                                                "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                currentMoveIndex === index + 1 ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'
-                                            )}
-                                        >
-                                            <span className="w-8 text-sm text-muted-foreground">{isWhiteMove ? `${moveNumber}.` : ''}</span>
-                                            <span className="font-bold w-16">{move.move}</span>
-                                            <div className={cn("flex items-center gap-1", styles.text)}>
-                                                {styles.icon}
-                                                <span className="text-sm font-semibold">{styles.label}</span>
+                                        return (
+                                            <div 
+                                                key={index}
+                                                onClick={() => setCurrentMoveIndex(index + 1)}
+                                                className={cn(
+                                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                                    currentMoveIndex === index + 1 ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'
+                                                )}
+                                            >
+                                                <span className="w-8 text-sm text-muted-foreground">{isWhiteMove ? `${moveNumber}.` : ''}</span>
+                                                <span className="font-bold w-16">{move.move}</span>
+                                                <div className={cn("flex items-center gap-1", styles.text)}>
+                                                    {styles.icon}
+                                                    <span className="text-sm font-semibold">{styles.label}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )
-                                })}
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Key Moments</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {analysis.keyMoments.map((moment, index) => (
-                                <Alert key={index} className="mb-2">
-                                    <Trophy className="h-4 w-4" />
-                                    <AlertTitle>Key Moment: {moment.move}</AlertTitle>
-                                    <AlertDescription>{moment.description}</AlertDescription>
-                                </Alert>
-                            ))}
-                        </CardContent>
-                     </Card>
+                                        )
+                                    })}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                     {analysis.keyMoments && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Key Moments</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {analysis.keyMoments.map((moment, index) => (
+                                    <Alert key={index} className="mb-2">
+                                        <Trophy className="h-4 w-4" />
+                                        <AlertTitle>Key Moment: {moment.move}</AlertTitle>
+                                        <AlertDescription>{moment.description}</AlertDescription>
+                                    </Alert>
+                                ))}
+                            </CardContent>
+                        </Card>
+                     )}
                 </div>
             </div>
         </div>
@@ -652,6 +664,7 @@ export default function PlayPage() {
   const [gameAnalysis, setGameAnalysis] = useState<GameAnalysisOutput | null>(null);
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { toast } = useToast();
   
   useEffect(() => {
     const gameParam = params.game?.[0];
@@ -848,5 +861,3 @@ const gameModes: {
     isAvailable: true,
   },
 ];
-
-    
