@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette, Check } from 'lucide-react';
+import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette, Check, Cpu, Puzzle, Target, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -42,6 +42,7 @@ import {
   ChartConfig,
 } from '@/components/ui/chart';
 import { Pie, PieChart, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { Progress } from '@/components/ui/progress';
 
 const mockPuzzleHistory: PuzzleHistoryItem[] = [
   { puzzleId: 'pz301', attempts: 1, solved: true },
@@ -56,6 +57,62 @@ const mockGameHistory: GameHistoryItem[] = [
     { opponent: 'Bot (Intermediate)', result: 'Win', date: '2024-07-25', ratingChange: 9, rating: 1179 },
     { opponent: 'Bot (Expert)', result: 'Loss', date: '2024-07-24', ratingChange: -5, rating: 1170 },
 ];
+
+const achievements = [
+  {
+    icon: Trophy,
+    title: "First Win",
+    description: "Win your first game against a bot or player.",
+    progress: 100,
+  },
+  {
+    icon: Puzzle,
+    title: "Puzzle Enthusiast",
+    description: "Solve 10 chess puzzles.",
+    progress: 30,
+  },
+  {
+    icon: Cpu,
+    title: "Bot Conqueror",
+    description: "Defeat 5 different bots.",
+    progress: 60,
+  },
+  {
+    icon: Target,
+    title: "Sharpshooter",
+    description: "Win a game with over 90% accuracy.",
+    progress: 0,
+  },
+  {
+    icon: Star,
+    title: "Perfect Puzzle",
+    description: "Solve a puzzle on the first try.",
+    progress: 100,
+  },
+  {
+    icon: Award,
+    title: "Comeback King",
+    description: "Win a game from a losing position.",
+    progress: 0,
+  }
+];
+
+const AchievementCard = ({ icon: Icon, title, description, progress }: { icon: React.ElementType, title: string, description: string, progress: number }) => (
+  <Card className={cn("flex flex-col", progress < 100 && "opacity-60 bg-muted/50")}>
+    <CardHeader className="flex-row items-center gap-4 space-y-0 pb-4">
+      <div className={cn("p-3 rounded-full", progress === 100 ? "bg-primary/20 text-primary" : "bg-muted-foreground/20 text-muted-foreground")}>
+        <Icon className="h-6 w-6" />
+      </div>
+      <CardTitle className="text-lg">{title}</CardTitle>
+    </CardHeader>
+    <CardContent className="flex-grow">
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </CardContent>
+    <CardContent>
+       <Progress value={progress} />
+    </CardContent>
+  </Card>
+);
 
 export default function ProfilePage() {
   const [recommendations, setRecommendations] = useState<string[]>([]);
@@ -250,11 +307,30 @@ export default function ProfilePage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="recommendations" className="mt-8">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="achievements" className="mt-8">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="achievements">Achievements</TabsTrigger>
           <TabsTrigger value="recommendations">AI Tools</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="achievements" className="mt-4">
+          <Card>
+             <CardHeader>
+              <CardTitle>Your Achievements</CardTitle>
+              <CardDescription>
+                Milestones and accomplishments on your chess journey.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {achievements.map((achievement, index) => (
+                  <AchievementCard key={index} {...achievement} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="recommendations" className="mt-4">
           <Card>
@@ -436,3 +512,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
