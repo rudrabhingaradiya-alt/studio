@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette, Check, Cpu, Puzzle, Target, Award } from 'lucide-react';
+import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette, Check, Cpu, Puzzle, Target, Award, Flame, Users, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -94,7 +94,43 @@ const achievements = [
     title: "Comeback King",
     description: "Win a game from a losing position.",
     progress: 0,
-  }
+  },
+  {
+    icon: Flame,
+    title: "Winning Streak",
+    description: "Win 3 games in a row.",
+    progress: 66,
+  },
+  {
+    icon: Puzzle,
+    title: "Puzzle Solver",
+    description: "Solve 25 puzzles.",
+    progress: 12,
+  },
+  {
+    icon: Users,
+    title: "Friendly Rivalry",
+    description: "Play a game with a friend.",
+    progress: 0,
+  },
+  {
+    icon: BrainCircuit,
+    title: "Tactical Wizard",
+    description: "Solve 5 puzzles in a row.",
+    progress: 80,
+  },
+  {
+    icon: BookOpen,
+    title: "Endgame Pro",
+    description: "Win a game after move 40.",
+    progress: 25,
+  },
+   {
+    icon: TrendingUp,
+    title: "On the Rise",
+    description: "Increase your rating by 100 points.",
+    progress: 20,
+  },
 ];
 
 const AchievementCard = ({ icon: Icon, title, description, progress }: { icon: React.ElementType, title: string, description: string, progress: number }) => (
@@ -515,7 +551,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
-
-    
