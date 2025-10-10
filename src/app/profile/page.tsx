@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -17,7 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { GameHistoryItem, PuzzleHistoryItem } from '@/lib/types';
 import { getPuzzleRecommendations } from '@/app/actions';
-import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette, Check, Cpu, Puzzle, Target, Award, Flame, Users, BookOpen } from 'lucide-react';
+import { BrainCircuit, Loader2, Star, History, TrendingUp, Trophy, ShieldAlert, User, Bell, Palette, Check, Cpu, Puzzle, Target, Award, Flame, Users, BookOpen, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -156,6 +157,7 @@ export default function ProfilePage() {
   const [selectedLogo, setSelectedLogo] = useState('https://picsum.photos/seed/user/200/200');
   const { isDarkMode, setIsDarkMode, boardTheme, setBoardTheme } = useTheme();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleGetRecommendations = async () => {
     setIsLoading(true);
@@ -211,6 +213,10 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
       <header className="mb-8 flex flex-col items-center gap-4 sm:flex-row">
         <Avatar className="h-24 w-24 border-4 border-primary">
           <AvatarImage src={selectedLogo} alt="User Avatar" />
@@ -551,3 +557,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
