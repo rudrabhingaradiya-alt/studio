@@ -11,6 +11,7 @@ import {
 import { generateBotAvatar, BotAvatarInput } from '@/ai/flows/bot-avatar-generator';
 import { createBot, CreateBotInput } from '@/ai/flows/create-bot-flow';
 import { analyzeGame, GameAnalysisInput } from '@/ai/flows/game-analysis-flow';
+import { generatePuzzleSequence, PuzzleSequenceInput } from '@/ai/flows/puzzle-sequence-generator';
 
 
 export async function getPuzzleRecommendations(
@@ -67,5 +68,16 @@ export async function getGameAnalysis(input: GameAnalysisInput) {
         const error = e instanceof Error ? e.message : 'An unknown error occurred.';
         console.error('Game analysis failed:', error);
         return { analysis: null, error };
+    }
+}
+
+export async function getPuzzleSequence(input: PuzzleSequenceInput) {
+    try {
+        const result = await generatePuzzleSequence(input);
+        return { sequence: result.puzzleIds, error: null };
+    } catch (e) {
+        const error = e instanceof Error ? e.message : 'An unknown error occurred.';
+        console.error('Puzzle sequence generation failed:', error);
+        return { sequence: [], error };
     }
 }
