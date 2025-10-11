@@ -60,7 +60,14 @@ const UserDropdown = () => {
             <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
           </>
         ) : (
-          <DropdownMenuItem onClick={login}>Log in</DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+                <Link href="/login">Log In</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+                <Link href="/signup">Sign Up</Link>
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
