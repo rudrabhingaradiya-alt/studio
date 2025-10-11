@@ -28,7 +28,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Opening Tactic',
   },
   {
-    id: 'pz007',
+    id: 'pz003',
     fen: '6k1/5ppp/8/8/8/8/p1K5/R7 w - - 0 1',
     solution: ['Rxa2'],
     rating: 950,
@@ -36,7 +36,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Endgame Tactic',
   },
   {
-    id: 'pz014',
+    id: 'pz004',
     fen: 'k7/8/K7/8/8/8/8/R7 w - - 0 1',
     solution: ['Rh1'],
     rating: 1000,
@@ -44,7 +44,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Checkmate',
   },
   {
-    id: 'pz017',
+    id: 'pz005',
     fen: 'r1b1k1nr/p2p1p1p/2p5/2b5/4P3/8/PPP2PPP/RNB1KB1R w KQkq - 0 9',
     solution: ['f4'],
     rating: 850,
@@ -52,7 +52,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Trapped Piece',
   },
   {
-    id: 'pz018',
+    id: 'pz006',
     fen: 'k7/8/8/8/8/8/K7/1R6 w - - 0 1',
     solution: ['Rb8#'],
     rating: 800,
@@ -60,7 +60,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Checkmate',
   },
   {
-    id: 'pz019',
+    id: 'pz007',
     fen: 'rnbq1bnr/pp1p1kpp/2p5/4p3/4P3/8/PPPP1PPP/RNBQK1NR w KQ - 0 4',
     solution: ['Qh5+'],
     rating: 820,
@@ -68,7 +68,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Fork',
   },
   {
-    id: 'pz020',
+    id: 'pz008',
     fen: 'r1bqkbnr/pppp1ppp/2n5/8/4P3/8/PPP2PPP/RNBQKBNR w KQkq - 1 4',
     solution: ['Bxf7+'],
     rating: 880,
@@ -76,7 +76,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Opening Trap',
   },
   {
-    id: 'pz021',
+    id: 'pz009',
     fen: '8/8/8/p1k5/P7/8/1K6/8 w - - 0 1',
     solution: ['Kb3'],
     rating: 920,
@@ -84,7 +84,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Endgame',
   },
   {
-    id: 'pz022',
+    id: 'pz010',
     fen: 'r3k2r/pp1q1ppp/n1p2n2/3p4/3P1B2/2P5/PP1N1PPP/R2QR1K1 w kq - 2 13',
     solution: ['Rxe8+'],
     rating: 950,
@@ -92,7 +92,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Remove the Defender',
   },
   {
-    id: 'pz023',
+    id: 'pz011',
     fen: 'rnb1kbnr/pp3ppp/2p5/q3p3/8/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 0 6',
     solution: ['Nxe5'],
     rating: 980,
@@ -100,7 +100,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Opening Tactic',
   },
   {
-    id: 'pz024',
+    id: 'pz012',
     fen: '2kr3r/pp3ppp/2p2n2/4n3/1b2P3/2N1BP2/PPP1N1PP/R2K3R w - - 3 13',
     solution: ['Kc2'],
     rating: 890,
@@ -108,7 +108,7 @@ export const puzzles: Puzzle[] = [
     theme: 'King Safety',
   },
   {
-    id: 'pz025',
+    id: 'pz013',
     fen: '5rk1/p4ppp/1p2p3/2b1N3/5P2/1P6/P5PP/3R1K2 b - - 0 25',
     solution: ['f6'],
     rating: 930,
@@ -116,7 +116,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Pawn Break',
   },
   {
-    id: 'pz026',
+    id: 'pz014',
     fen: 'r2q1rk1/pbp1bppp/1p2pn2/n7/2PP4/P1NBPN2/1B3PPP/R2Q1RK1 b - - 1 11',
     solution: ['c5'],
     rating: 960,
@@ -124,7 +124,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Central Control',
   },
   {
-    id: 'pz003',
+    id: 'pz015',
     fen: '8/k7/8/8/8/8/r7/2K5 w - - 0 1',
     solution: ['Kb1'],
     rating: 1200,
@@ -132,7 +132,7 @@ export const puzzles: Puzzle[] = [
     theme: 'King Safety',
   },
   {
-    id: 'pz004',
+    id: 'pz016',
     fen: '1k6/1p6/8/4N3/8/8/8/K7 w - - 0 1',
     solution: ['Kb1'],
     rating: 1100,
@@ -140,7 +140,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Endgame',
   },
   {
-    id: 'pz008',
+    id: 'pz017',
     fen: 'r1bqkb1r/pp1n1ppp/2n1p3/2ppP3/3P1P2/2N1BN2/PPP3PP/R2QKB1R b KQkq - 1 7',
     solution: ['cxd4'],
     rating: 1250,
@@ -148,7 +148,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Pawn Structure',
   },
   {
-    id: 'pz011',
+    id: 'pz018',
     fen: '1r3rk1/p1q2p1p/4p1p1/2p1P3/2Q5/5N2/P4PPP/2R2RK1 w - - 0 21',
     solution: ['Rxc5'],
     rating: 1300,
@@ -156,7 +156,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Overloading',
   },
   {
-    id: 'pz012',
+    id: 'pz019',
     fen: '5rk1/1p3ppp/p1p5/2R5/8/1P2P3/P4PPP/6K1 w - - 0 24',
     solution: ['Rxc6'],
     rating: 1150,
@@ -164,7 +164,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Back Rank',
   },
   {
-    id: 'pz027',
+    id: 'pz020',
     fen: 'r2q1rk1/1p1nbppp/p2pbn2/4p3/4P3/1NN1BP2/PPPQ2PP/2KR1B1R w - - 1 11',
     solution: ['g4'],
     rating: 1280,
@@ -172,7 +172,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Attack',
   },
   {
-    id: 'pz028',
+    id: 'pz021',
     fen: '4k3/8/8/8/8/8/4p3/4K3 w - - 0 1',
     solution: ['Kxe2'],
     rating: 1200,
@@ -180,7 +180,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Endgame',
   },
   {
-    id: 'pz029',
+    id: 'pz022',
     fen: 'rn1qk2r/pb1p1ppp/1p2pn2/8/1b1NP3/2N1BP2/PPP3PP/R2QKB1R w KQkq - 2 8',
     solution: ['Qd3'],
     rating: 1350,
@@ -188,7 +188,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Development',
   },
   {
-    id: 'pz030',
+    id: 'pz023',
     fen: 'r1b2rk1/pp1q1ppp/2n1pn2/2p5/3P4/P1Q1PN2/1P3PPP/R1B1KB1R w KQ - 0 11',
     solution: ['dxc5'],
     rating: 1300,
@@ -196,7 +196,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Positional',
   },
   {
-    id: 'pz031',
+    id: 'pz024',
     fen: 'r1b1k2r/pp2ppbp/2np1np1/8/2B1P3/2N1BN2/PP3PPP/R4RK1 w kq - 2 11',
     solution: ['Rfd1'],
     rating: 1220,
@@ -204,7 +204,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Prophylaxis',
   },
   {
-    id: 'pz005',
+    id: 'pz025',
     fen: 'r1b1k2r/pp1n1p1p/2p1pnp1/q2p4/2PP4/2N1PN2/PPQ2PPP/R3KB1R w KQkq - 0 9',
     solution: ['e4'],
     rating: 1500,
@@ -212,7 +212,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Breakthrough',
   },
   {
-    id: 'pz006',
+    id: 'pz026',
     fen: '6k1/5p2/6p1/7p/7P/5qP1/5P2/6K1 w - - 0 1',
     solution: ['Kf1'],
     rating: 1400,
@@ -220,7 +220,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Queen Endgame',
   },
   {
-    id: 'pz009',
+    id: 'pz027',
     fen: '2r3k1/p4p1p/1p2p1p1/8/3n1P2/1P1B4/P4P1P/3R2K1 w - - 0 24',
     solution: ['Ba6'],
     rating: 1600,
@@ -228,7 +228,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Pin',
   },
   {
-    id: 'pz010',
+    id: 'pz028',
     fen: 'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1',
     solution: ['Nxg6'],
     rating: 1800,
@@ -236,7 +236,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Sacrifice',
   },
   {
-    id: 'pz013',
+    id: 'pz029',
     fen: '2q1r1k1/1p1b1p1p/p5p1/3p4/3P4/P1n1PBN1/5PPP/1Q4K1 w - - 0 24',
     solution: ['Qb4'],
     rating: 1700,
@@ -244,7 +244,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Discovered Attack',
   },
   {
-    id: 'pz015',
+    id: 'pz030',
     fen: 'r1b1r1k1/pp3pbp/1q1p1np1/2pP4/2P1N3/1P3N2/P1Q1BPPP/1R3RK1 b - - 0 15',
     solution: ['Rxe4'],
     rating: 1550,
@@ -252,7 +252,7 @@ export const puzzles: Puzzle[] = [
     theme: 'Skewer',
   },
   {
-    id: 'pz016',
+    id: 'pz031',
     fen: '4r1k1/1p3p2/p5p1/3p1b1p/3P4/1P2P1qP/P5P1/2Q2RK1 b - - 0 27',
     solution: ['Rxe3'],
     rating: 1450,
