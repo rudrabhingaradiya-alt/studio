@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, CheckCircle, Info, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Info, Star } from 'lucide-react';
 import { puzzles, type Puzzle } from '@/lib/puzzles';
 import {
   Card,
@@ -88,6 +88,10 @@ export default function PuzzlesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
+      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
           Chess Puzzles
