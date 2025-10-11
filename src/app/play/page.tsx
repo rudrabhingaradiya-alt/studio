@@ -2,9 +2,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { BrainCircuit, User, Users } from 'lucide-react';
+import { BrainCircuit, User, Users, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 type GameModeId = 'bot' | 'online' | 'friend';
 
@@ -44,6 +45,10 @@ export default function PlayPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
+       <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
       <div className="mx-auto max-w-3xl text-center">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
           Play Chess
