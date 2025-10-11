@@ -13,7 +13,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { puzzles, Puzzle } from '@/lib/puzzles';
 
-export const PuzzleRushInputSchema = z.object({
+const PuzzleRushInputSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The desired difficulty of the puzzles.'),
   numberOfPuzzles: z.number().int().positive().max(50).default(30).describe('The number of puzzles to generate for the rush.'),
   playerRating: z.number().optional().describe("The player's current rating to help tailor puzzle difficulty."),
