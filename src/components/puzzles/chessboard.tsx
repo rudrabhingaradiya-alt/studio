@@ -404,6 +404,21 @@ const getPositionalValue = (piece: Piece, row: number, col: number) => {
     return pieceColor === 'white' ? value : -value;
 }
 
+const evaluateBoard = (board: Board): number => {
+    let totalEvaluation = 0;
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            const piece = board[row][col];
+            if (piece) {
+                const pieceValue = pieceValues[piece.toLowerCase() as keyof typeof pieceValues] || 0;
+                const positionalValue = getPositionalValue(piece, row, col);
+                const value = pieceValue + positionalValue;
+                totalEvaluation += (getPieceColor(piece) === 'white' ? value : -value);
+            }
+        }
+    }
+    return totalEvaluation;
+};
 
 const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel = 200, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default', initialFen }) => {
   const [initialBoardState, initialTurnState, initialCastlingState] = useMemo(() => {
@@ -485,7 +500,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     const opponentColor = playerColor;
     let bestMove: { start: [number, number]; end: [number, number] } | null = null;
     let bestValue = -Infinity;
-    let allAIMoves: { start: [number, number]; end: [number, number] }[] = [];
+    let allAIMoves: { start: [number, number]; end: [number, number], value: number }[] = [];
 
     for (let r1 = 0; r1 < 8; r1++) {
         for (let c1 = 0; c1 < 8; c1++) {
@@ -494,20 +509,12 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                 for (let r2 = 0; r2 < 8; r2++) {
                     for (let c2 = 0; c2 < 8; c2++) {
                         if (isValidMove(currentBoard, r1, c1, r2, c2, currentCastlingRights)) {
-                            allAIMoves.push({ start: [r1, c1], end: [r2, c2] });
-
                             const newBoard = currentBoard.map(r => [...r]);
                             newBoard[r2][c2] = newBoard[r1][c1];
                             newBoard[r1][c1] = null;
                             
-                            let moveValue = 0;
-                            const capturedPiece = currentBoard[r2][c2];
-                            if (capturedPiece) {
-                                moveValue += pieceValues[capturedPiece] || 0;
-                            }
+                            let moveValue = -evaluateBoard(newBoard); // AI wants to minimize the score (negative for black)
 
-                            moveValue += getPositionalValue(piece, r2, c2) - getPositionalValue(piece, r1, c1);
-                            
                             if (isKingInCheck(newBoard, opponentColor)) {
                                 if (!hasAnyValidMove(newBoard, opponentColor, currentCastlingRights)) {
                                     moveValue += 10000;
@@ -515,25 +522,30 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                                     moveValue += 0.5;
                                 }
                             }
-                            
-                            if (Math.random() > (aiLevel / 3500)) { // Add randomness based on aiLevel
-                              moveValue += Math.random() * 2 - 1;
-                            }
 
-                            if (moveValue > bestValue) {
-                                bestValue = moveValue;
-                                bestMove = { start: [r1, c1], end: [r2, c2] };
-                            }
+                            allAIMoves.push({ start: [r1, c1], end: [r2, c2], value: moveValue });
                         }
                     }
                 }
             }
         }
     }
-
-    if (!bestMove && allAIMoves.length > 0) {
-      bestMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
+    
+    if (allAIMoves.length === 0) {
+        checkEndGame(currentBoard, aiColor, currentCastlingRights);
+        return;
     }
+
+    // Add randomness based on aiLevel
+    const randomnessFactor = 1.0 - (aiLevel / 3200); // 0.0 for perfect AI, 1.0 for completely random
+    const randomizedMoves = allAIMoves.map(move => ({
+        ...move,
+        value: move.value + (Math.random() * 2 - 1) * randomnessFactor * 5 // Randomness scaled by factor
+    }));
+
+    randomizedMoves.sort((a, b) => b.value - a.value);
+    
+    bestMove = randomizedMoves[0];
 
     if (bestMove) {
       const { start, end } = bestMove;
@@ -757,3 +769,4 @@ export default Chessboard;
     
 
     
+
