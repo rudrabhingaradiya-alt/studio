@@ -15,7 +15,6 @@ import { puzzles, Puzzle } from '@/lib/puzzles';
 
 const PuzzleSequenceInputSchema = z.object({
   theme: z.string().optional().describe('A specific chess theme for the puzzles (e.g., "fork", "pin", "mate in 2").'),
-  difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level for the puzzles.'),
   numberOfPuzzles: z.number().int().positive().max(10).default(5).describe('The number of puzzles to include in the sequence.'),
 });
 export type PuzzleSequenceInput = z.infer<typeof PuzzleSequenceInputSchema>;
@@ -38,13 +37,12 @@ const prompt = ai.definePrompt({
   output: {schema: PuzzleSequenceOutputSchema},
   prompt: `You are an expert chess coach. Your task is to create a logical sequence of chess puzzles for a student.
 
-You will be given the desired number of puzzles, a difficulty level, and an optional theme.
-You must select puzzles from the provided list to create a sequence that matches the specified difficulty. If possible, the sequence should get progressively more difficult within that difficulty bracket.
-If a theme is specified, all puzzles in the sequence must match that theme.
+You will be given the desired number of puzzles and an optional theme.
+You must select puzzles from the provided list to create a sequence that starts with 'easy' puzzles, progresses to 'medium', and finishes with 'hard' puzzles.
+The puzzles within each difficulty should also be ordered by increasing rating where possible.
 
 Your response MUST be an array of puzzle IDs in the correct order.
 
-Difficulty: {{difficulty}}
 Number of Puzzles: {{numberOfPuzzles}}
 {{#if theme}}
 Theme: {{theme}}
@@ -53,7 +51,7 @@ Theme: {{theme}}
 Available Puzzles:
 ${availablePuzzlesString}
 
-Select exactly {{numberOfPuzzles}} puzzle IDs and return them as an ordered array.
+Select exactly {{numberOfPuzzles}} puzzle IDs from the available list and return them as an ordered array, progressing from easy to medium to hard.
 `,
 });
 
