@@ -116,36 +116,38 @@ export default function PuzzleRushPage() {
     
     if (gameState === 'idle' || gameState === 'finished') {
         return (
-             <div className="container mx-auto px-4 py-8 md:py-12 text-center">
-                 <Button variant="ghost" onClick={() => router.back()} className="absolute top-4 left-4">
+             <div className="container mx-auto px-4 py-8 md:py-12">
+                 <Button variant="ghost" onClick={() => router.back()} className="mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                 </Button>
-                <Card className="max-w-md mx-auto">
-                    <CardHeader>
-                        <CardTitle className="text-4xl font-extrabold tracking-tight">Puzzle Rush</CardTitle>
-                        <CardDescription>Solve as many puzzles as you can in 3 minutes.</CardDescription>
-                    </CardHeader>
-                    {gameState === 'finished' && (
-                        <CardContent className="space-y-4">
-                            <h3 className="text-2xl font-bold">Time's Up!</h3>
-                            <p className="text-5xl font-bold text-primary">{score}</p>
-                            <p className="text-muted-foreground">Puzzles Solved</p>
-                            <Button onClick={startRush} className="w-full">
-                                <Repeat className="mr-2 h-4 w-4" />
-                                Play Again
-                            </Button>
-                        </CardContent>
-                    )}
-                    {gameState === 'idle' && (
-                        <CardContent>
-                             <Button onClick={startRush} size="lg" className="w-full">
-                                 <Play className="mr-2 h-5 w-5" />
-                                 Start Puzzle Rush
-                             </Button>
-                        </CardContent>
-                    )}
-                </Card>
+                <div className="text-center">
+                    <Card className="max-w-md mx-auto">
+                        <CardHeader>
+                            <CardTitle className="text-4xl font-extrabold tracking-tight">Puzzle Rush</CardTitle>
+                            <CardDescription>Solve as many puzzles as you can in 3 minutes.</CardDescription>
+                        </CardHeader>
+                        {gameState === 'finished' && (
+                            <CardContent className="space-y-4">
+                                <h3 className="text-2xl font-bold">Time's Up!</h3>
+                                <p className="text-5xl font-bold text-primary">{score}</p>
+                                <p className="text-muted-foreground">Puzzles Solved</p>
+                                <Button onClick={startRush} className="w-full">
+                                    <Repeat className="mr-2 h-4 w-4" />
+                                    Play Again
+                                </Button>
+                            </CardContent>
+                        )}
+                        {gameState === 'idle' && (
+                            <CardContent>
+                                 <Button onClick={startRush} size="lg" className="w-full">
+                                     <Play className="mr-2 h-5 w-5" />
+                                     Start Puzzle Rush
+                                 </Button>
+                            </CardContent>
+                        )}
+                    </Card>
+                </div>
             </div>
         );
     }
@@ -153,13 +155,16 @@ export default function PuzzleRushPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
+            <div className="flex justify-between items-center mb-4">
+                <Button variant="ghost" onClick={() => router.back()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                </Button>
+                <div className="text-2xl font-bold">
+                    {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                </div>
+            </div>
              <div className="mb-4">
-                 <div className="flex justify-between items-center mb-2">
-                     <h2 className="text-2xl font-bold">Puzzle Rush</h2>
-                     <div className="text-2xl font-bold">
-                        {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-                    </div>
-                 </div>
                  <Progress value={(timeLeft / RUSH_DURATION) * 100} />
              </div>
              <div className="grid gap-8 md:grid-cols-3">
