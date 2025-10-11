@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, CheckCircle, Info, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Info, Star, Calendar } from 'lucide-react';
 import { puzzles, type Puzzle } from '@/lib/puzzles';
 import {
   Card,
@@ -45,11 +45,25 @@ export default function PuzzlesPage() {
   const router = useRouter();
   // In a real app, solved status would come from user data
   const [solvedPuzzles] = useState(['pz001']);
+  const [dailyPuzzle, setDailyPuzzle] = useState<Puzzle | null>(null);
   const [filters, setFilters] = useState({
     status: 'all' as Status,
     difficulty: 'all' as Difficulty,
     sortBy: 'default' as SortBy,
   });
+
+  useEffect(() => {
+    const getDayOfYear = () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const diff = now.getTime() - start.getTime();
+      const oneDay = 1000 * 60 * 60 * 24;
+      return Math.floor(diff / oneDay);
+    };
+    const dayOfYear = getDayOfYear();
+    const puzzleIndex = dayOfYear % puzzles.length;
+    setDailyPuzzle(puzzles[puzzleIndex]);
+  }, []);
 
   const handleFilterChange = <K extends keyof typeof filters>(
     key: K,
@@ -101,6 +115,31 @@ export default function PuzzlesPage() {
           Sharpen your tactical vision and calculation skills.
         </p>
       </header>
+
+      {dailyPuzzle && (
+        <Card className="mb-8 shrink-0 bg-gradient-to-br from-primary/80 to-primary text-primary-foreground shadow-lg">
+          <CardHeader className="flex-row items-center gap-4">
+            <Calendar className="h-10 w-10" />
+            <div>
+              <CardTitle className="text-2xl">Today's Daily Puzzle</CardTitle>
+              <CardDescription className="text-primary-foreground/80">A new challenge every day to keep you sharp.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+               <Badge variant="secondary" className="capitalize">{dailyPuzzle.difficulty}</Badge>
+               <p className="text-sm">Rating: {dailyPuzzle.rating}</p>
+               <p className="text-sm">Theme: {dailyPuzzle.theme}</p>
+            </div>
+             <Button 
+                variant="secondary" 
+                onClick={() => router.push(`/puzzles/${dailyPuzzle.id}`)}
+              >
+                Solve Daily Puzzle <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-8 shrink-0">
         <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
