@@ -25,6 +25,7 @@ import { useAuth } from '@/context/auth-context';
 const navLinks = [
   { href: '/play', label: 'Play' },
   { href: '/puzzles', label: 'Puzzles' },
+  { href: '/puzzle-rush', label: 'Puzzle Rush' },
   { href: '/profile', label: 'History' },
 ];
 

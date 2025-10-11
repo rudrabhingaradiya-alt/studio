@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -12,6 +13,7 @@ import { generateBotAvatar, BotAvatarInput } from '@/ai/flows/bot-avatar-generat
 import { createBot, CreateBotInput } from '@/ai/flows/create-bot-flow';
 import { analyzeGame, GameAnalysisInput } from '@/ai/flows/game-analysis-flow';
 import { generatePuzzleSequence, PuzzleSequenceInput } from '@/ai/flows/puzzle-sequence-generator';
+import { generatePuzzleRush, PuzzleRushInput } from '@/ai/flows/puzzle-rush-flow';
 
 
 export async function getPuzzleRecommendations(
@@ -79,5 +81,16 @@ export async function getPuzzleSequence(input: PuzzleSequenceInput) {
         const error = e instanceof Error ? e.message : 'An unknown error occurred.';
         console.error('Puzzle sequence generation failed:', error);
         return { sequence: [], error };
+    }
+}
+
+export async function getPuzzleRush(input: PuzzleRushInput) {
+    try {
+        const result = await generatePuzzleRush(input);
+        return { puzzles: result.puzzles, error: null };
+    } catch (e) {
+        const error = e instanceof Error ? e.message : 'An unknown error occurred.';
+        console.error('Puzzle rush generation failed:', error);
+        return { puzzles: [], error };
     }
 }

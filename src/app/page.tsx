@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { AuthCard } from '@/components/auth/auth-card';
-import { BrainCircuit, User, Users, Calendar, Puzzle as PuzzleIcon } from 'lucide-react';
+import { BrainCircuit, User, Users, Calendar, Puzzle as PuzzleIcon, Timer } from 'lucide-react';
 import { puzzles, type Puzzle } from '@/lib/puzzles';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 
@@ -93,10 +93,17 @@ export default function Home() {
                     icon={Calendar}
                     onClick={() => router.push(`/puzzles/${dailyPuzzle.id}`)}
                     isAvailable={true}
-                    className="lg:col-span-2 bg-gradient-to-br from-primary/80 to-primary text-primary-foreground"
+                    className="lg:col-span-1 bg-gradient-to-br from-primary/80 to-primary text-primary-foreground"
                     badgeText="New Challenge"
                 />
             )}
+             <DashboardCard 
+                title="Puzzle Rush"
+                description="Solve as many puzzles as you can in 3 minutes."
+                icon={Timer}
+                onClick={() => router.push('/puzzle-rush')}
+                isAvailable={true}
+            />
              <DashboardCard 
                 title="View All Puzzles"
                 description="Browse our full collection of puzzles."
