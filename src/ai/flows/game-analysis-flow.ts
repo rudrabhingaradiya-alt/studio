@@ -71,7 +71,7 @@ const gameAnalysisFlow = ai.defineFlow(
     const model = ai.model('googleai/gemini-2.5-flash');
     const moveHistoryStr = input.moveHistory.join(' ');
 
-    const [moveAnalysis, phaseAnalysis, keyMoments] = await Promise.all([
+    const [{ output: moveAnalysis }, { output: phaseAnalysis }, { output: keyMoments }] = await Promise.all([
       ai.generate({
         model,
         prompt: `Analyze the following chess moves: ${moveHistoryStr}. Classify each move as 'brilliant', 'great', 'best', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'miss', or 'blunder'. Provide a concise comment for significant moves.`,
@@ -99,12 +99,16 @@ const gameAnalysisFlow = ai.defineFlow(
       }),
     ]);
 
+    if (!moveAnalysis || !phaseAnalysis || !keyMoments) {
+      throw new Error('Game analysis failed to generate all required parts.');
+    }
+
     return {
-      moveAnalysis: moveAnalysis.output!.moveAnalysis,
-      opening: phaseAnalysis.output!.opening,
-      middlegame: phaseAnalysis.output!.middlegame,
-      endgame: phaseAnalysis.output!.endgame,
-      keyMoments: keyMoments.output!.keyMoments,
+      moveAnalysis: moveAnalysis.moveAnalysis,
+      opening: phaseAnalysis.opening,
+      middlegame: phaseAnalysis.middlegame,
+      endgame: phaseAnalysis.endgame,
+      keyMoments: keyMoments.keyMoments,
     };
   }
 );
