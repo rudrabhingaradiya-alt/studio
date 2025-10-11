@@ -52,11 +52,11 @@ const mockPuzzleHistory: PuzzleHistoryItem[] = [
 ];
 
 const mockGameHistory: GameHistoryItem[] = [
-    { opponent: 'Bot (Beginner)', result: 'Win', date: '2024-07-28', ratingChange: 8, rating: 1180 },
-    { opponent: 'Bot (Intermediate)', result: 'Loss', date: '2024-07-27', ratingChange: -7, rating: 1172 },
-    { opponent: 'Bot (Adept)', result: 'Draw', date: '2024-07-26', ratingChange: 0, rating: 1179 },
-    { opponent: 'Bot (Intermediate)', result: 'Win', date: '2024-07-25', ratingChange: 9, rating: 1179 },
-    { opponent: 'Bot (Expert)', result: 'Loss', date: '2024-07-24', ratingChange: -5, rating: 1170 },
+    { opponent: 'Bot (Beginner)', result: 'Win', date: '2024-07-28', ratingChange: 8, rating: 1180, accuracy: 92.3 },
+    { opponent: 'Bot (Intermediate)', result: 'Loss', date: '2024-07-27', ratingChange: -7, rating: 1172, accuracy: 75.1 },
+    { opponent: 'Bot (Adept)', result: 'Draw', date: '2024-07-26', ratingChange: 0, rating: 1179, accuracy: 88.5 },
+    { opponent: 'Bot (Intermediate)', result: 'Win', date: '2024-07-25', ratingChange: 9, rating: 1179, accuracy: 95.0 },
+    { opponent: 'Bot (Expert)', result: 'Loss', date: '2024-07-24', ratingChange: -5, rating: 1170, accuracy: 68.9 },
 ];
 
 const achievements = [
@@ -330,6 +330,7 @@ export default function ProfilePage() {
                     <TableRow>
                       <TableHead>Opponent</TableHead>
                       <TableHead>Result</TableHead>
+                      <TableHead>Accuracy</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Rating Change</TableHead>
                     </TableRow>
@@ -339,6 +340,7 @@ export default function ProfilePage() {
                       <TableRow key={index}>
                         <TableCell>{game.opponent}</TableCell>
                         <TableCell>{getResultBadge(game.result)}</TableCell>
+                        <TableCell>{game.accuracy ? `${game.accuracy}%` : 'N/A'}</TableCell>
                         <TableCell>{new Date(game.date).toLocaleDateString()}</TableCell>
                         <TableCell className={cn(game.ratingChange > 0 ? 'text-green-500' : game.ratingChange < 0 ? 'text-red-500' : 'text-muted-foreground')}>
                             {game.ratingChange > 0 ? `+${game.ratingChange}`: game.ratingChange}
@@ -557,5 +559,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

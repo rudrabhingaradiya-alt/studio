@@ -11,6 +11,7 @@ export interface GameHistoryItem {
   date: string;
   ratingChange: number;
   rating: number;
+  accuracy?: number;
 }
 
 export interface PuzzleRecommendation {
