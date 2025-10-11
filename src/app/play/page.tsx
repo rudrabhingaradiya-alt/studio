@@ -1,28 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings } from 'lucide-react';
+import { BrainCircuit, User, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Slider } from '@/components/ui/slider';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type GameModeId = 'bot' | 'online' | 'friend';
 
@@ -53,8 +35,9 @@ const gameModes = [
 export default function PlayPage() {
   const router = useRouter();
 
-  const handleModeSelect = (mode: GameModeId) => {
-    if (mode.isAvailable) {
+  const handleModeSelect = (modeId: GameModeId) => {
+    const mode = gameModes.find(m => m.id === modeId);
+    if (mode && mode.isAvailable) {
       router.push(`/play/${mode.id}`);
     }
   };
@@ -74,7 +57,7 @@ export default function PlayPage() {
         {gameModes.map((mode) => (
           <Card
             key={mode.id}
-            onClick={() => handleModeSelect(mode)}
+            onClick={() => handleModeSelect(mode.id)}
             className={`flex flex-col text-center transition-all ${
               mode.isAvailable
                 ? 'cursor-pointer hover:border-primary hover:shadow-lg'
