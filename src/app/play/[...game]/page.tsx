@@ -3,11 +3,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, RotateCcw, Lightbulb, Trophy } from 'lucide-react';
+import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, RotateCcw, Lightbulb, Trophy, Flag } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Chessboard, { GameResult, Move } from '@/components/puzzles/chessboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -382,16 +382,20 @@ const GameOverDialog = ({
   if (!result) return null;
 
   const title =
-    result === 'checkmate-white'
+    result === 'checkmate-white' || result === 'resign-black'
       ? 'Checkmate! You Won!'
-      : result === 'checkmate-black'
+      : result === 'checkmate-black' || result === 'resign-white'
       ? 'Checkmate! You Lost.'
       : 'Stalemate! It\'s a Draw.';
   const description =
     result === 'checkmate-white'
       ? 'Congratulations on your victory!'
+      : result === 'resign-black'
+      ? 'Your opponent has resigned. You win!'
       : result === 'checkmate-black'
       ? 'Better luck next time. Keep practicing!'
+      : result === 'resign-white'
+      ? 'You have resigned the game.'
       : 'The game is a draw as no legal moves can be made.';
 
   return (
@@ -436,11 +440,40 @@ const LeaveGameDialog = ({
   </AlertDialog>
 );
 
+const ResignDialog = ({
+  isOpen,
+  onCancel,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) => (
+    <AlertDialog open={isOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Resign Game?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Are you sure you want to resign? This will result in a loss.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onConfirm} variant="destructive">
+                    Resign
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+);
+
 
 const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGameReview }: { config: BotGameConfig, onExit: () => void, onRematch: () => void, gameResult: GameResult | null, onGameOver: (result: GameResult, moveHistory: Move[]) => void, onGameReview: () => void }) => {
     const { boardTheme } = useTheme();
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [showResignConfirm, setShowResignConfirm] = useState(false);
     const [rematchCounter, setRematchCounter] = useState(0);
+    const [moveHistory, setMoveHistory] = useState<Move[]>([]);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -476,6 +509,18 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
     const handlePlayAgain = () => {
         onRematch();
         setRematchCounter(prev => prev + 1);
+        setMoveHistory([]);
+    }
+
+    const handleGameOverWithHistory = (result: GameResult, history: Move[]) => {
+        setMoveHistory(history);
+        onGameOver(result, history);
+    }
+    
+    const handleResign = () => {
+        setShowResignConfirm(false);
+        const playerColor = config.color === 'random' ? 'white' : config.color; // Simplified for now
+        onGameOver(playerColor === 'white' ? 'resign-white' : 'resign-black', moveHistory);
     }
 
     return (
@@ -484,7 +529,7 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
                 <ChevronLeft className="h-5 w-5 mr-2" />
                 Exit Game
             </Button>
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center justify-center">
                 <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
                     <CardHeader className="text-center">
                         <CardTitle>vs. {getBotName(config.rating)} ({config.rating})</CardTitle>
@@ -496,11 +541,16 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
                         <Chessboard
                             key={rematchCounter}
                             aiLevel={config.rating}
-                            onGameOver={onGameOver}
+                            onGameOver={handleGameOverWithHistory}
                             playerColor={config.color}
                             boardTheme={boardTheme}
                         />
                     </CardContent>
+                    <CardFooter>
+                        <Button variant="destructive" onClick={() => setShowResignConfirm(true)} className="w-full">
+                            <Flag className="mr-2 h-4 w-4" /> Resign
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
             <GameOverDialog
@@ -513,6 +563,11 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
                 isOpen={showLeaveConfirm}
                 onCancel={() => setShowLeaveConfirm(false)}
                 onConfirm={onExit}
+            />
+            <ResignDialog
+                isOpen={showResignConfirm}
+                onCancel={() => setShowResignConfirm(false)}
+                onConfirm={handleResign}
             />
         </div>
     );

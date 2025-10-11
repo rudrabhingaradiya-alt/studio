@@ -10,7 +10,7 @@ type Piece = 'k' | 'q' | 'r' | 'b' | 'n' | 'p' | 'K' | 'Q' | 'R' | 'B' | 'N' | '
 export type Board = Piece[][];
 type PlayerTurn = 'white' | 'black';
 type PlayerColor = 'white' | 'black' | 'random';
-export type GameResult = 'checkmate-white' | 'checkmate-black' | 'stalemate';
+export type GameResult = 'checkmate-white' | 'checkmate-black' | 'stalemate' | 'resign-white' | 'resign-black';
 export interface Move {
     before: string; // FEN before move
     after: string; // FEN after move
