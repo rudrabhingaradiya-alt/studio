@@ -16,6 +16,12 @@ export interface Move {
     after: string; // FEN after move
     san: string; // Standard Algebraic Notation
 }
+interface CastlingRights {
+    K: boolean; // White kingside
+    Q: boolean; // White queenside
+    k: boolean; // Black kingside
+    q: boolean; // Black queenside
+}
 
 const pieceToUnicode: { [key in Piece as string]: string } = {
   k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
@@ -33,7 +39,7 @@ const defaultBoard: Board = [
   ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
 ];
 
-const boardToFen = (board: Board, turn: PlayerTurn): string => {
+const boardToFen = (board: Board, turn: PlayerTurn, castling: CastlingRights): string => {
     const fenRows = board.map(row => {
         let fenRow = '';
         let emptyCount = 0;
@@ -53,13 +59,21 @@ const boardToFen = (board: Board, turn: PlayerTurn): string => {
         }
         return fenRow;
     });
-    return `${fenRows.join('/')} ${turn === 'white' ? 'w' : 'b'} - - 0 1`;
+
+    let castlingStr = '';
+    if (castling.K) castlingStr += 'K';
+    if (castling.Q) castlingStr += 'Q';
+    if (castling.k) castlingStr += 'k';
+    if (castling.q) castlingStr += 'q';
+    if (castlingStr === '') castlingStr = '-';
+
+    return `${fenRows.join('/')} ${turn === 'white' ? 'w' : 'b'} ${castlingStr} - 0 1`;
 };
 
 
 // FEN parsing function
-const fenToBoard = (fen: string): [Board, PlayerTurn] => {
-  const [boardPart, turnPart] = fen.split(' ');
+const fenToBoard = (fen: string): [Board, PlayerTurn, CastlingRights] => {
+  const [boardPart, turnPart, castlingPart] = fen.split(' ');
   const rows = boardPart.split('/');
   const board: Board = rows.map(row => {
     const newRow: Piece[] = [];
@@ -75,7 +89,13 @@ const fenToBoard = (fen: string): [Board, PlayerTurn] => {
     return newRow;
   });
   const turn: PlayerTurn = turnPart === 'w' ? 'white' : 'black';
-  return [board, turn];
+  const castlingRights: CastlingRights = {
+    K: castlingPart.includes('K'),
+    Q: castlingPart.includes('Q'),
+    k: castlingPart.includes('k'),
+    q: castlingPart.includes('q'),
+  };
+  return [board, turn, castlingRights];
 };
 
 interface ChessboardProps {
@@ -106,6 +126,11 @@ const squareToNotation = (row: number, col: number) => {
 const moveSan = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): string => {
     const piece = board[startRow][startCol];
     if (!piece) return '';
+
+    // Handle castling notation
+    if (piece.toLowerCase() === 'k' && Math.abs(startCol - endCol) === 2) {
+        return endCol > startCol ? 'O-O' : 'O-O-O';
+    }
 
     const pieceType = piece.toUpperCase();
     const targetSquare = squareToNotation(endRow, endCol);
@@ -256,31 +281,61 @@ const isKingInCheck = (board: Board, kingColor: PlayerTurn): boolean => {
 };
 
 
-const isValidMove = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
+const isValidMove = (
+    board: Board, 
+    startRow: number, 
+    startCol: number, 
+    endRow: number, 
+    endCol: number,
+    castlingRights: CastlingRights
+): boolean => {
+    const piece = board[startRow][startCol];
+    if (!piece) return false;
+    const color = getPieceColor(piece);
+    if (!color) return false;
+    const opponentColor = color === 'white' ? 'black' : 'white';
+    
+    // Check for castling
+    if (piece.toLowerCase() === 'k' && Math.abs(startCol - endCol) === 2 && startRow === endRow) {
+        if (isKingInCheck(board, color)) return false;
+
+        const isKingside = endCol > startCol;
+        if (isKingside) { // Kingside castle
+            if (color === 'white' && !castlingRights.K) return false;
+            if (color === 'black' && !castlingRights.k) return false;
+            // Check for pieces between king and rook
+            if (board[startRow][startCol + 1] !== null || board[startRow][startCol + 2] !== null) return false;
+            // Check if king passes through check
+            if (isSquareAttacked(board, startRow, startCol + 1, opponentColor)) return false;
+        } else { // Queenside castle
+            if (color === 'white' && !castlingRights.Q) return false;
+            if (color === 'black' && !castlingRights.q) return false;
+            // Check for pieces between king and rook
+            if (board[startRow][startCol - 1] !== null || board[startRow][startCol - 2] !== null || board[startRow][startCol - 3] !== null) return false;
+            // Check if king passes through check
+            if (isSquareAttacked(board, startRow, startCol - 1, opponentColor)) return false;
+        }
+        return true; // The final square is checked in the general check validation below
+    }
+
     if (!isMoveValidWithoutCheck(board, startRow, startCol, endRow, endCol)) {
         return false;
     }
-
-    const piece = board[startRow][startCol];
-    if (!piece) return false;
-
-    const pieceColor = getPieceColor(piece);
-    if (!pieceColor) return false;
 
     const newBoard = board.map(r => [...r]);
     newBoard[endRow][endCol] = newBoard[startRow][startCol];
     newBoard[startRow][startCol] = null;
 
-    return !isKingInCheck(newBoard, pieceColor);
+    return !isKingInCheck(newBoard, color);
 };
 
-const hasAnyValidMove = (board: Board, color: PlayerTurn) => {
+const hasAnyValidMove = (board: Board, color: PlayerTurn, castlingRights: CastlingRights) => {
     for (let r1 = 0; r1 < 8; r1++) {
         for (let c1 = 0; c1 < 8; c1++) {
             if (getPieceColor(board[r1][c1]) === color) {
                 for (let r2 = 0; r2 < 8; r2++) {
                     for (let c2 = 0; c2 < 8; c2++) {
-                        if (isValidMove(board, r1, c1, r2, c2)) {
+                        if (isValidMove(board, r1, c1, r2, c2, castlingRights)) {
                             return true;
                         }
                     }
@@ -351,15 +406,16 @@ const getPositionalValue = (piece: Piece, row: number, col: number) => {
 
 
 const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel = 200, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default', initialFen }) => {
-  const [initialBoardState, initialTurnState] = useMemo(() => {
-    const fen = initialFen || puzzle?.fen;
-    return fen ? fenToBoard(fen) : [defaultBoard, 'white' as PlayerTurn];
+  const [initialBoardState, initialTurnState, initialCastlingState] = useMemo(() => {
+    const fen = initialFen || puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    return fenToBoard(fen);
   }, [puzzle, initialFen]);
 
   const [board, setBoard] = useState<Board>(initialBoardState);
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<[number, number][]>([]);
   const [turn, setTurn] = useState<PlayerTurn>(initialTurnState);
+  const [castlingRights, setCastlingRights] = useState<CastlingRights>(initialCastlingState);
   const [isGameOver, setIsGameOver] = useState(false);
   const [playerColor, setPlayerColor] = useState<PlayerTurn>('white');
   const [aiColor, setAiColor] = useState<PlayerTurn>('black');
@@ -373,8 +429,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
   useEffect(() => {
     setBoard(initialBoardState);
     setTurn(initialTurnState);
-    setMoveHistory(initialFen ? [{before: initialFen, after: initialFen, san: 'start'}] : []);
-  }, [initialBoardState, initialTurnState, initialFen]);
+    setCastlingRights(initialCastlingState);
+    const fen = initialFen || puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    setMoveHistory(initialFen ? [{before: fen, after: fen, san: 'start'}] : []);
+  }, [initialBoardState, initialTurnState, initialCastlingState, initialFen, puzzle]);
 
   useEffect(() => {
     let chosenPlayerColor: PlayerTurn = initialPlayerColor === 'random' 
@@ -390,10 +448,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
   }, [initialPlayerColor, puzzle, initialTurnState]);
 
 
-  const checkEndGame = useCallback((currentBoard: Board, nextTurn: PlayerTurn) => {
+  const checkEndGame = useCallback((currentBoard: Board, nextTurn: PlayerTurn, currentCastlingRights: CastlingRights) => {
     if (isGameOver) return;
     
-    if (!hasAnyValidMove(currentBoard, nextTurn)) {
+    if (!hasAnyValidMove(currentBoard, nextTurn, currentCastlingRights)) {
         setIsGameOver(true);
         if (isKingInCheck(currentBoard, nextTurn)) {
             const result: GameResult = nextTurn === playerColor ? 'checkmate-black' : 'checkmate-white';
@@ -404,7 +462,26 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     }
   }, [isGameOver, onGameOver, playerColor, moveHistory]);
 
-  const makeAIMove = useCallback((currentBoard: Board) => {
+  const updateCastlingRights = (rights: CastlingRights, piece: Piece, startRow: number, startCol: number) => {
+    const newRights = { ...rights };
+    if (piece === 'K') {
+      newRights.K = false;
+      newRights.Q = false;
+    } else if (piece === 'k') {
+      newRights.k = false;
+      newRights.q = false;
+    } else if (piece === 'R') {
+      if (startRow === 7 && startCol === 0) newRights.Q = false;
+      if (startRow === 7 && startCol === 7) newRights.K = false;
+    } else if (piece === 'r') {
+      if (startRow === 0 && startCol === 0) newRights.q = false;
+      if (startRow === 0 && startCol === 7) newRights.k = false;
+    }
+    return newRights;
+  };
+
+
+  const makeAIMove = useCallback((currentBoard: Board, currentCastlingRights: CastlingRights) => {
     const opponentColor = playerColor;
     let bestMove: { start: [number, number]; end: [number, number] } | null = null;
     let bestValue = -Infinity;
@@ -416,7 +493,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
             if (piece && getPieceColor(piece) === aiColor) {
                 for (let r2 = 0; r2 < 8; r2++) {
                     for (let c2 = 0; c2 < 8; c2++) {
-                        if (isValidMove(currentBoard, r1, c1, r2, c2)) {
+                        if (isValidMove(currentBoard, r1, c1, r2, c2, currentCastlingRights)) {
                             allAIMoves.push({ start: [r1, c1], end: [r2, c2] });
 
                             const newBoard = currentBoard.map(r => [...r]);
@@ -432,7 +509,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                             moveValue += getPositionalValue(piece, r2, c2) - getPositionalValue(piece, r1, c1);
                             
                             if (isKingInCheck(newBoard, opponentColor)) {
-                                if (!hasAnyValidMove(newBoard, opponentColor)) {
+                                if (!hasAnyValidMove(newBoard, opponentColor, currentCastlingRights)) {
                                     moveValue += 10000;
                                 } else {
                                     moveValue += 0.5;
@@ -465,28 +542,42 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
 
       const newBoard = currentBoard.map((r) => [...r]);
       const san = moveSan(newBoard, startRow, startCol, endRow, endCol);
-      const beforeFen = boardToFen(newBoard, aiColor);
+      const beforeFen = boardToFen(newBoard, aiColor, currentCastlingRights);
       
       const pieceToMove = newBoard[startRow][startCol];
       newBoard[endRow][endCol] = pieceToMove;
       newBoard[startRow][startCol] = null;
 
-      const afterFen = boardToFen(newBoard, playerColor);
+      // Handle castling rook move for AI
+        if (pieceToMove?.toLowerCase() === 'k' && Math.abs(startCol - endCol) === 2) {
+            if (endCol > startCol) { // Kingside
+                newBoard[startRow][5] = newBoard[startRow][7];
+                newBoard[startRow][7] = null;
+            } else { // Queenside
+                newBoard[startRow][3] = newBoard[startRow][0];
+                newBoard[startRow][0] = null;
+            }
+        }
+
+      const newCastlingRights = updateCastlingRights(currentCastlingRights, pieceToMove, startRow, startCol);
+      setCastlingRights(newCastlingRights);
+
+      const afterFen = boardToFen(newBoard, playerColor, newCastlingRights);
       setMoveHistory(prev => [...prev, { before: beforeFen, after: afterFen, san }]);
       setBoard(newBoard);
       setTurn(playerColor);
-      checkEndGame(newBoard, playerColor);
+      checkEndGame(newBoard, playerColor, newCastlingRights);
     } else {
-        checkEndGame(currentBoard, aiColor);
+        checkEndGame(currentBoard, aiColor, currentCastlingRights);
     }
   }, [checkEndGame, aiColor, playerColor, aiLevel]);
   
   useEffect(() => {
     if (turn === aiColor && !isStatic && !isGameOver && !puzzle) {
       const thinkTime = 500 + Math.random() * 500;
-      setTimeout(() => makeAIMove(board), thinkTime);
+      setTimeout(() => makeAIMove(board, castlingRights), thinkTime);
     }
-  }, [turn, board, isStatic, isGameOver, makeAIMove, aiColor, puzzle]);
+  }, [turn, board, castlingRights, isStatic, isGameOver, makeAIMove, aiColor, puzzle]);
 
 
   const handleSquareClick = (row: number, col: number) => {
@@ -527,22 +618,37 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
         
         const newBoard = board.map((r) => [...r]);
         const san = moveSan(newBoard, startRow, startCol, row, col);
-        const beforeFen = boardToFen(newBoard, playerColor);
+        const beforeFen = boardToFen(newBoard, playerColor, castlingRights);
 
-        newBoard[row][col] = newBoard[startRow][startCol];
+        const pieceToMove = newBoard[startRow][startCol];
+        newBoard[row][col] = pieceToMove;
         newBoard[startRow][startCol] = null;
         
-        if (newBoard[row][col]?.toLowerCase() === 'p' && (row === 0 || row === 7)) {
+        // Handle castling rook move for player
+        if (pieceToMove?.toLowerCase() === 'k' && Math.abs(startCol - col) === 2) {
+            if (col > startCol) { // Kingside
+                newBoard[startRow][5] = newBoard[startRow][7];
+                newBoard[startRow][7] = null;
+            } else { // Queenside
+                newBoard[startRow][3] = newBoard[startRow][0];
+                newBoard[startRow][0] = null;
+            }
+        }
+
+        if (pieceToMove?.toLowerCase() === 'p' && (row === 0 || row === 7)) {
             newBoard[row][col] = getPieceColor(newBoard[row][col]) === 'white' ? 'Q' : 'q';
         }
+
+        const newCastlingRights = updateCastlingRights(castlingRights, pieceToMove, startRow, startCol);
+        setCastlingRights(newCastlingRights);
         
-        const afterFen = boardToFen(newBoard, aiColor);
+        const afterFen = boardToFen(newBoard, aiColor, newCastlingRights);
         setMoveHistory(prev => [...prev, { before: beforeFen, after: afterFen, san }]);
         setBoard(newBoard);
         setSelectedPiece(null);
         setPossibleMoves([]);
         if (!puzzle) {
-            checkEndGame(newBoard, aiColor);
+            checkEndGame(newBoard, aiColor, newCastlingRights);
             setTurn(aiColor);
         }
       } else {
@@ -562,7 +668,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
 
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        if (isValidMove(board, row, col, i, j)) {
+        if (isValidMove(board, row, col, i, j, castlingRights)) {
           moves.push([i, j]);
         }
       }
@@ -647,5 +753,7 @@ const isLight = (row: number, col: number) => (row + col) % 2 !== 0;
 
 
 export default Chessboard;
+
+    
 
     
