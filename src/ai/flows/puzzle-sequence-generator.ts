@@ -15,7 +15,7 @@ import { puzzles, Puzzle } from '@/lib/puzzles';
 
 const PuzzleSequenceInputSchema = z.object({
   theme: z.string().optional().describe('A specific chess theme for the puzzles (e.g., "fork", "pin", "mate in 2").'),
-  initialRating: z.number().int().min(800).max(2000).describe('The approximate starting rating for the puzzle sequence.'),
+  difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level for the puzzles.'),
   numberOfPuzzles: z.number().int().positive().max(10).default(5).describe('The number of puzzles to include in the sequence.'),
 });
 export type PuzzleSequenceInput = z.infer<typeof PuzzleSequenceInputSchema>;
@@ -30,7 +30,7 @@ export async function generatePuzzleSequence(input: PuzzleSequenceInput): Promis
 }
 
 // Convert full puzzle objects to a simplified string format for the prompt
-const availablePuzzlesString = puzzles.map(p => `ID: ${p.id}, Rating: ${p.rating}, Theme: ${p.theme}`).join('\n');
+const availablePuzzlesString = puzzles.map(p => `ID: ${p.id}, Rating: ${p.rating}, Theme: ${p.theme}, Difficulty: ${p.difficulty}`).join('\n');
 
 const prompt = ai.definePrompt({
   name: 'generatePuzzleSequencePrompt',
@@ -38,13 +38,13 @@ const prompt = ai.definePrompt({
   output: {schema: PuzzleSequenceOutputSchema},
   prompt: `You are an expert chess coach. Your task is to create a logical sequence of chess puzzles for a student.
 
-You will be given the desired number of puzzles, a starting rating, and an optional theme.
-You must select puzzles from the provided list to create a sequence that ideally gets progressively more difficult.
+You will be given the desired number of puzzles, a difficulty level, and an optional theme.
+You must select puzzles from the provided list to create a sequence that matches the specified difficulty. If possible, the sequence should get progressively more difficult within that difficulty bracket.
 If a theme is specified, all puzzles in the sequence must match that theme.
 
 Your response MUST be an array of puzzle IDs in the correct order.
 
-Starting Rating: {{initialRating}}
+Difficulty: {{difficulty}}
 Number of Puzzles: {{numberOfPuzzles}}
 {{#if theme}}
 Theme: {{theme}}
