@@ -29,6 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Status = 'all' | 'solved' | 'unsolved';
 type Difficulty = 'all' | 'easy' | 'medium' | 'hard';
@@ -87,8 +88,8 @@ export default function PuzzlesPage() {
   const filteredPuzzles = getFilteredPuzzles();
 
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+    <div className="container mx-auto px-4 py-8 md:py-12 flex flex-col h-[calc(100vh-5rem)]">
+      <Button variant="ghost" onClick={() => router.back()} className="mb-4 self-start">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
@@ -101,7 +102,7 @@ export default function PuzzlesPage() {
         </p>
       </header>
 
-      <Card className="mb-8">
+      <Card className="mb-8 shrink-0">
         <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
           <div className="flex-grow grid grid-cols-2 md:grid-cols-3 gap-4 w-full">
             <Select
@@ -151,64 +152,64 @@ export default function PuzzlesPage() {
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredPuzzles.map((puzzle) => (
-          <Card
-            key={puzzle.id}
-            className="flex flex-col transition-all hover:shadow-lg hover:-translate-y-1"
-          >
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle>{puzzle.id.toUpperCase()}</CardTitle>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      {solvedPuzzles.includes(puzzle.id) && (
-                        <CheckCircle className="h-6 w-6 text-green-500" />
-                      )}
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Solved!</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <CardDescription>Rating: {puzzle.rating}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow space-y-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    'h-3 w-3 rounded-full',
-                    difficultyColors[puzzle.difficulty]
-                  )}
-                />
-                <span className="text-sm font-medium capitalize">
-                  {puzzle.difficulty}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-yellow-400" />
-                <span className="text-sm text-muted-foreground capitalize">
-                  {puzzle.theme}
-                </span>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                onClick={() => router.push(`/puzzles/${puzzle.id}`)}
+      
+      <ScrollArea className="flex-grow">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pr-4">
+            {filteredPuzzles.map((puzzle) => (
+              <Card
+                key={puzzle.id}
+                className="flex flex-col transition-all hover:shadow-lg hover:-translate-y-1"
               >
-                Solve Puzzle
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <CardTitle>{puzzle.id.toUpperCase()}</CardTitle>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          {solvedPuzzles.includes(puzzle.id) && (
+                            <CheckCircle className="h-6 w-6 text-green-500" />
+                          )}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Solved!</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <CardDescription>Rating: {puzzle.rating}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        'h-3 w-3 rounded-full',
+                        difficultyColors[puzzle.difficulty]
+                      )}
+                    />
+                    <span className="text-sm font-medium capitalize">
+                      {puzzle.difficulty}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-yellow-400" />
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {puzzle.theme}
+                    </span>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    className="w-full"
+                    onClick={() => router.push(`/puzzles/${puzzle.id}`)}
+                  >
+                    Solve Puzzle
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+      </ScrollArea>
     </div>
   );
 }
-
-    
