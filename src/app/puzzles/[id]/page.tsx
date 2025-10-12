@@ -101,7 +101,7 @@ export default function PuzzlePage() {
 
               {puzzleState === 'correct' && (
                 <Alert variant="default" className="bg-green-100 dark:bg-green-900/50 border-green-500">
-                  <CheckCircle className="h-4 w-4" color="green" />
+                  <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertTitle>Correct!</AlertTitle>
                   <AlertDescription>
                     You found the best move. Well done!
@@ -155,5 +155,3 @@ export default function PuzzlePage() {
     </div>
   );
 }
-
-    

@@ -448,6 +448,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
   const [aiColor, setAiColor] = useState<PlayerTurn>('black');
   const [currentTheme, setCurrentTheme] = useState<BoardTheme | undefined>(boardThemes.find(t => t.id === boardThemeId));
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
+  
+  const boardOrientation = puzzle ? initialTurnState : playerColor;
+
+  const [solutionArrow, setSolutionArrow] = useState<{x1: string, y1: string, x2: string, y2: string} | null>(null);
+
 
   useEffect(() => {
     setCurrentTheme(boardThemes.find(t => t.id === boardThemeId));
@@ -611,70 +616,59 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     setBoard(newBoard);
   }, [board]);
 
-  const boardOrientation = puzzle ? initialTurnState : playerColor;
 
-  const [solutionMove, solutionArrow] = useMemo(() => {
-    if (!showSolutionMove || !puzzle) return [null, null];
+  useEffect(() => {
+    if (showSolutionMove && puzzle) {
+        let startSquare: [number, number] | null = null;
+        let endSquare: [number, number] | null = null;
 
-    let startSquare: [number, number] | null = null;
-    let endSquare: [number, number] | null = null;
-    
-    // Simplified SAN parsing for puzzles
-    const move = puzzle.solution[0].replace(/[+#]/g, '');
+        const moveSAN = puzzle.solution[0].replace(/[+#]/g, '');
 
-    for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-            if (getPieceColor(board[r][c]) === turn) {
-                for (let r2 = 0; r2 < 8; r2++) {
-                    for (let c2 = 0; c2 < 8; c2++) {
-                        if(isValidMove(board, r, c, r2, c2, castlingRights)) {
-                            const san = moveSan(board, r, c, r2, c2);
-                            if (san.includes(move)) {
-                                startSquare = [r, c];
-                                endSquare = [r2, c2];
-                                break;
+        for (let r1 = 0; r1 < 8; r1++) {
+            for (let c1 = 0; c1 < 8; c1++) {
+                if (getPieceColor(board[r1][c1]) === turn) {
+                    for (let r2 = 0; r2 < 8; r2++) {
+                        for (let c2 = 0; c2 < 8; c2++) {
+                            if (isValidMove(board, r1, c1, r2, c2, castlingRights)) {
+                                const san = moveSan(board, r1, c1, r2, c2);
+                                if (san.includes(moveSAN)) {
+                                    startSquare = [r1, c1];
+                                    endSquare = [r2, c2];
+                                    break;
+                                }
                             }
                         }
                     }
                 }
+                if (startSquare) break;
             }
-            if(startSquare) break;
+            if (startSquare) break;
         }
-        if(startSquare) break;
+
+        if (startSquare && endSquare) {
+            makeMove(startSquare[0], startSquare[1], endSquare[0], endSquare[1]);
+
+            const getCoords = (row: number, col: number) => {
+                let r = boardOrientation === 'white' ? row : 7 - row;
+                let c = boardOrientation === 'white' ? col : 7 - col;
+                const x = c * 12.5 + 6.25;
+                const y = r * 12.5 + 6.25;
+                return { x, y };
+            };
+
+            const startCoords = getCoords(startSquare[0], startSquare[1]);
+            const endCoords = getCoords(endSquare[0], endSquare[1]);
+            
+            setSolutionArrow({
+                x1: `${startCoords.x}%`,
+                y1: `${startCoords.y}%`,
+                x2: `${endCoords.x}%`,
+                y2: `${endCoords.y}%`,
+            });
+            onPuzzleCorrect?.();
+        }
     }
-    
-    if (!startSquare || !endSquare) return [null, null];
-
-    const getCoords = (row: number, col: number) => {
-        let r = boardOrientation === 'white' ? row : 7 - row;
-        let c = boardOrientation === 'white' ? col : 7 - col;
-        const x = c * 12.5 + 6.25;
-        const y = r * 12.5 + 6.25;
-        return { x, y };
-    };
-
-    const startCoords = getCoords(startSquare[0], startSquare[1]);
-    const endCoords = getCoords(endSquare[0], endSquare[1]);
-    
-    const arrow = {
-        x1: `${startCoords.x}%`,
-        y1: `${startCoords.y}%`,
-        x2: `${endCoords.x}%`,
-        y2: `${endCoords.y}%`,
-    }
-
-    return [{ start: startSquare, end: endSquare }, arrow];
-
-  }, [showSolutionMove, puzzle, board, turn, castlingRights, boardOrientation]);
-
-
-  useEffect(() => {
-    if (solutionMove) {
-      const { start, end } = solutionMove;
-      makeMove(start[0], start[1], end[0], end[1]);
-      onPuzzleCorrect?.();
-    }
-  }, [solutionMove, makeMove, onPuzzleCorrect]);
+  }, [showSolutionMove, puzzle, board, turn, castlingRights, makeMove, onPuzzleCorrect, boardOrientation]);
 
 
   const handleSquareClick = (row: number, col: number) => {
@@ -867,5 +861,3 @@ const isLight = (row: number, col: number) => (row + col) % 2 !== 0;
 
 
 export default Chessboard;
-
-    
