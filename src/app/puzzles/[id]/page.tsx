@@ -79,6 +79,7 @@ export default function PuzzlePage() {
             boardTheme={boardTheme}
             onPuzzleCorrect={handleCorrect}
             onPuzzleIncorrect={handleIncorrect}
+            showSolutionMove={showSolution ? puzzle.solution[0] : undefined}
           />
         </div>
         <div>
@@ -116,7 +117,7 @@ export default function PuzzlePage() {
                 </Alert>
               )}
 
-              {puzzleState === 'solving' && (
+              {puzzleState === 'solving' && !showSolution && (
                  <Alert>
                   <AlertTitle>
                     {puzzle.fen.includes(' w ') ? 'White to move' : 'Black to move'}
@@ -131,17 +132,17 @@ export default function PuzzlePage() {
                     <RotateCw className="mr-2 h-4 w-4" />
                     Reset Puzzle
                   </Button>
-                  <Button onClick={() => setShowSolution(true)} variant="secondary" className="w-full">
+                  <Button onClick={() => setShowSolution(true)} variant="secondary" className="w-full" disabled={showSolution}>
                     <Lightbulb className="mr-2 h-4 w-4" />
                     Show Solution
                   </Button>
                </div>
                {showSolution && (
-                  <Alert variant="default" className="border-blue-500 bg-blue-50 dark:bg-blue-900/50">
-                    <Lightbulb className="h-4 w-4 text-blue-500" />
-                    <AlertTitle>Solution</AlertTitle>
+                  <Alert variant="default" className="border-green-500 bg-green-100 dark:bg-green-900/50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertTitle>Solution Revealed</AlertTitle>
                     <AlertDescription>
-                      The correct move is: <strong>{puzzle.solution[0]}</strong>
+                      The correct move is <strong>{puzzle.solution[0]}</strong>. The arrow on the board shows the move direction.
                     </AlertDescription>
                   </Alert>
                 )}

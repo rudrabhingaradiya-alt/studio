@@ -108,6 +108,7 @@ interface ChessboardProps {
   playerColor?: PlayerColor;
   boardTheme?: string;
   initialFen?: string;
+  showSolutionMove?: string;
 }
 
 const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
@@ -122,6 +123,17 @@ const getPieceColor = (piece: Piece): 'white' | 'black' | null => {
 const squareToNotation = (row: number, col: number) => {
     return `${'abcdefgh'[col]}${8 - row}`;
 }
+
+const notationToSquare = (notation: string): [number, number] | null => {
+    if (notation.length < 2) return null;
+    const file = notation.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = 8 - parseInt(notation.substring(1), 10);
+    if (file >= 0 && file < 8 && rank >= 0 && rank < 8) {
+        return [rank, file];
+    }
+    return null;
+}
+
 
 const moveSan = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): string => {
     const piece = board[startRow][startCol];
@@ -420,7 +432,7 @@ const evaluateBoard = (board: Board): number => {
     return totalEvaluation;
 };
 
-const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel = 200, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default', initialFen }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel = 200, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default', initialFen, showSolutionMove }) => {
   const [initialBoardState, initialTurnState, initialCastlingState] = useMemo(() => {
     const fen = initialFen || puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     return fenToBoard(fen);
@@ -593,7 +605,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
 
 
   const handleSquareClick = (row: number, col: number) => {
-    if (isStatic || turn !== playerColor || isGameOver) return;
+    if (isStatic || turn !== playerColor || isGameOver || showSolutionMove) return;
 
     const clickedPiece = board[row][col];
     const clickedPieceColor = getPieceColor(clickedPiece);
@@ -617,8 +629,19 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
         
         if (puzzle) {
             const piece = board[startRow][startCol] as string;
-            // This is a very simplified check and would need a proper chess engine/library for full algebraic notation
-            if(puzzle.solution[0].endsWith(squareToNotation(row, col))) {
+            const pieceType = piece.toUpperCase();
+            const targetSquare = squareToNotation(row, col);
+            let moveNotation = targetSquare;
+
+            if (pieceType !== 'P') {
+                moveNotation = pieceType.replace('P', '') + targetSquare;
+            }
+            if (puzzle.solution[0].includes('x')) {
+                const fromFile = squareToNotation(startRow, startCol)[0];
+                moveNotation = fromFile + 'x' + targetSquare;
+            }
+
+            if(puzzle.solution.some(s => s.endsWith(targetSquare))) {
                 onPuzzleCorrect?.();
             } else {
                 onPuzzleIncorrect?.();
@@ -688,7 +711,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     setPossibleMoves(moves);
   };
 
-
   const boardOrientation = puzzle ? initialTurnState : playerColor;
 
   const files = boardOrientation === 'white' ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
@@ -697,6 +719,60 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
   const displayBoard = useMemo(() => {
     return boardOrientation === 'white' ? board : board.map(row => row.slice().reverse()).reverse();
   }, [board, boardOrientation]);
+
+  const solutionArrow = useMemo(() => {
+    if (!showSolutionMove) return null;
+
+    let startNotation: string | undefined;
+    let endNotation: string;
+
+    const move = showSolutionMove;
+    const parts = move.replace(/#|\+|x/g, '').replace(/O-O-O/g, 'Kc1').replace(/O-O/g, 'Kg1');
+    endNotation = parts.slice(-2);
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece && getPieceColor(piece) === turn) {
+            const pieceType = piece.toUpperCase();
+            const sanPiece = parts.length > 2 ? parts[0] : 'P';
+            if (pieceType === sanPiece || (pieceType === 'P' && sanPiece === 'P' )) {
+                if (isValidMove(board, r, c, notationToSquare(endNotation)![0], notationToSquare(endNotation)![1], castlingRights)) {
+                    startNotation = squareToNotation(r,c);
+                    break;
+                }
+            }
+        }
+      }
+      if (startNotation) break;
+    }
+
+    if (!startNotation) return null;
+
+    const startSquare = notationToSquare(startNotation);
+    const endSquare = notationToSquare(endNotation);
+
+    if (!startSquare || !endSquare) return null;
+
+    const getCoords = (row: number, col: number) => {
+        let r = boardOrientation === 'white' ? row : 7 - row;
+        let c = boardOrientation === 'white' ? col : 7 - col;
+        const x = c * 12.5 + 6.25;
+        const y = r * 12.5 + 6.25;
+        return { x, y };
+    };
+
+    const startCoords = getCoords(startSquare[0], startSquare[1]);
+    const endCoords = getCoords(endSquare[0], endSquare[1]);
+    
+    return {
+        x1: `${startCoords.x}%`,
+        y1: `${startCoords.y}%`,
+        x2: `${endCoords.x}%`,
+        y2: `${endCoords.y}%`,
+    }
+
+  }, [showSolutionMove, board, castlingRights, turn, boardOrientation]);
 
   const theme = currentTheme || boardThemes[0];
   const lightSquareClass = theme.light;
@@ -758,6 +834,22 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
             </span>
         </div>
       ))}
+       {solutionArrow && (
+        <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-80" viewBox="0 0 100 100">
+            <defs>
+                <marker id="arrowhead" markerWidth="5" markerHeight="3.5" refX="0" refY="1.75" orient="auto">
+                    <polygon points="0 0, 5 1.75, 0 3.5" fill="rgb(34 197 94 / 1)" />
+                </marker>
+            </defs>
+            <line 
+                x1={solutionArrow.x1} y1={solutionArrow.y1} 
+                x2={solutionArrow.x2} y2={solutionArrow.y2} 
+                stroke="rgb(34 197 94 / 1)" 
+                strokeWidth="2.5" 
+                markerEnd="url(#arrowhead)" 
+            />
+        </svg>
+      )}
     </div>
   );
 };
@@ -769,4 +861,5 @@ export default Chessboard;
     
 
     
+
 
