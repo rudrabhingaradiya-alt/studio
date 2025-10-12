@@ -28,7 +28,7 @@ const gameModes = [
   },
   {
     id: 'online' as const,
-    title: 'Play Online',
+    title: 'Play vs Online',
     description: 'Challenge a random opponent from around the world.',
     icon: Users,
     isAvailable: false,
