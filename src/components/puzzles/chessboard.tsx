@@ -724,30 +724,49 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     if (!showSolutionMove) return null;
 
     let startNotation: string | undefined;
-    let endNotation: string;
+    let endNotation: string | undefined;
 
-    const move = showSolutionMove;
-    const parts = move.replace(/#|\+|x/g, '').replace(/O-O-O/g, 'Kc1').replace(/O-O/g, 'Kg1');
-    endNotation = parts.slice(-2);
+    const move = showSolutionMove.replace(/[+#]/g, ''); // Clean SAN
 
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const piece = board[r][c];
-        if (piece && getPieceColor(piece) === turn) {
-            const pieceType = piece.toUpperCase();
-            const sanPiece = parts.length > 2 ? parts[0] : 'P';
-            if (pieceType === sanPiece || (pieceType === 'P' && sanPiece === 'P' )) {
-                if (isValidMove(board, r, c, notationToSquare(endNotation)![0], notationToSquare(endNotation)![1], castlingRights)) {
-                    startNotation = squareToNotation(r,c);
-                    break;
+    if (move === 'O-O') { // Kingside castling
+        startNotation = turn === 'white' ? 'e1' : 'e8';
+        endNotation = turn === 'white' ? 'g1' : 'g8';
+    } else if (move === 'O-O-O') { // Queenside castling
+        startNotation = turn === 'white' ? 'e1' : 'e8';
+        endNotation = turn === 'white' ? 'c1' : 'c8';
+    } else {
+        const moveParts = move.match(/([N|B|R|Q|K])?([a-h])?([1-8])?([x])?([a-h][1-8])/);
+        if (!moveParts) return null;
+
+        const pieceType = (moveParts[1] || 'P') as Piece;
+        const fromFile = moveParts[2];
+        const fromRank = moveParts[3];
+        endNotation = moveParts[5];
+
+        const endSquare = notationToSquare(endNotation);
+        if (!endSquare) return null;
+        
+        // Find all pieces that can move to the end square
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = board[r][c];
+                if (piece && getPieceColor(piece) === turn && piece.toUpperCase() === pieceType.toUpperCase()) {
+                    if (isValidMove(board, r, c, endSquare[0], endSquare[1], castlingRights)) {
+                        // If there's ambiguity, check file/rank
+                        if (fromFile && 'abcdefgh'[c] !== fromFile) continue;
+                        if (fromRank && '87654321'[r] !== fromRank) continue;
+                        
+                        startNotation = squareToNotation(r, c);
+                        break;
+                    }
                 }
             }
+            if (startNotation) break;
         }
-      }
-      if (startNotation) break;
     }
 
-    if (!startNotation) return null;
+
+    if (!startNotation || !endNotation) return null;
 
     const startSquare = notationToSquare(startNotation);
     const endSquare = notationToSquare(endNotation);
@@ -863,3 +882,6 @@ export default Chessboard;
     
 
 
+
+
+    
