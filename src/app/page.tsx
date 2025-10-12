@@ -86,6 +86,13 @@ export default function Home() {
         </div>
 
         <div className="mt-12 mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
+             <DashboardCard 
+                title="Puzzle Rush"
+                description="Solve as many puzzles as you can in 3 minutes."
+                icon={Timer}
+                onClick={() => router.push('/puzzle-rush')}
+                isAvailable={true}
+            />
             {dailyPuzzle && (
                 <DashboardCard 
                     title="Daily Puzzle"
@@ -97,13 +104,17 @@ export default function Home() {
                     badgeText="New Challenge"
                 />
             )}
-             <DashboardCard 
-                title="Puzzle Rush"
-                description="Solve as many puzzles as you can in 3 minutes."
-                icon={Timer}
-                onClick={() => router.push('/puzzle-rush')}
-                isAvailable={true}
-            />
+            {gameModes.find(mode => mode.id === 'online') && (
+                 <DashboardCard
+                    key={'online'}
+                    title={'Play Online'}
+                    description={'Challenge a random opponent from around the world.'}
+                    icon={Users}
+                    onClick={() => router.push('/play/online')}
+                    isAvailable={false}
+                    badgeText={'Coming Soon'}
+                />
+            )}
              <DashboardCard 
                 title="View All Puzzles"
                 description="Browse our full collection of puzzles."
@@ -111,7 +122,7 @@ export default function Home() {
                 onClick={() => router.push('/puzzles')}
                 isAvailable={true}
             />
-            {gameModes.map((mode) => (
+            {gameModes.filter(mode => mode.id !== 'online').map((mode) => (
                 <DashboardCard
                     key={mode.id}
                     title={mode.title}
