@@ -629,19 +629,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
         
         if (puzzle) {
             const piece = board[startRow][startCol] as string;
-            const pieceType = piece.toUpperCase();
             const targetSquare = squareToNotation(row, col);
-            let moveNotation = targetSquare;
+            const moveNotation = moveSan(board, startRow, startCol, row, col);
 
-            if (pieceType !== 'P') {
-                moveNotation = pieceType.replace('P', '') + targetSquare;
-            }
-            if (puzzle.solution[0].includes('x')) {
-                const fromFile = squareToNotation(startRow, startCol)[0];
-                moveNotation = fromFile + 'x' + targetSquare;
-            }
-
-            if(puzzle.solution.some(s => s.endsWith(targetSquare))) {
+            // Simple check: does the player's move notation (e.g., "Nxe5") match the end of the solution string?
+            if(puzzle.solution.some(s => moveNotation.includes(s.replace(/[+#]/g, '')))) {
                 onPuzzleCorrect?.();
             } else {
                 onPuzzleIncorrect?.();
@@ -728,36 +720,32 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
 
     const move = showSolutionMove.replace(/[+#]/g, ''); // Clean SAN
 
-    if (move === 'O-O') { // Kingside castling
+    if (move === 'O-O') {
         startNotation = turn === 'white' ? 'e1' : 'e8';
         endNotation = turn === 'white' ? 'g1' : 'g8';
-    } else if (move === 'O-O-O') { // Queenside castling
+    } else if (move === 'O-O-O') {
         startNotation = turn === 'white' ? 'e1' : 'e8';
         endNotation = turn === 'white' ? 'c1' : 'c8';
     } else {
-        const moveParts = move.match(/([N|B|R|Q|K])?([a-h])?([1-8])?([x])?([a-h][1-8])/);
-        if (!moveParts) return null;
-
-        const pieceType = (moveParts[1] || 'P') as Piece;
-        const fromFile = moveParts[2];
-        const fromRank = moveParts[3];
-        endNotation = moveParts[5];
-
+        // This is a simplified parser for SAN. It won't handle all ambiguous cases.
+        const pieceType = (move.match(/^[N|B|R|Q|K]/)?.[0] || 'P') as Piece;
+        endNotation = move.slice(-2);
+        
         const endSquare = notationToSquare(endNotation);
         if (!endSquare) return null;
-        
-        // Find all pieces that can move to the end square
+
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 const piece = board[r][c];
                 if (piece && getPieceColor(piece) === turn && piece.toUpperCase() === pieceType.toUpperCase()) {
                     if (isValidMove(board, r, c, endSquare[0], endSquare[1], castlingRights)) {
-                        // If there's ambiguity, check file/rank
-                        if (fromFile && 'abcdefgh'[c] !== fromFile) continue;
-                        if (fromRank && '87654321'[r] !== fromRank) continue;
-                        
-                        startNotation = squareToNotation(r, c);
-                        break;
+                        // This simplistic check takes the first valid move found.
+                        // A full SAN parser is needed for complex ambiguities.
+                        const potentialSan = moveSan(board, r, c, endSquare[0], endSquare[1]);
+                        if(potentialSan.includes(move)) {
+                            startNotation = squareToNotation(r, c);
+                            break;
+                        }
                     }
                 }
             }
@@ -876,12 +864,3 @@ const isLight = (row: number, col: number) => (row + col) % 2 !== 0;
 
 
 export default Chessboard;
-
-    
-
-    
-
-
-
-
-    
