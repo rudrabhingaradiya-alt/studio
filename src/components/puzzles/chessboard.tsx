@@ -444,7 +444,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     const fen = initialFen || puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     return fenToBoard(fen);
   }, [puzzle, initialFen]);
-  const boardOrientation = puzzle ? initialTurnState : initialPlayerColor === 'random' ? 'white' : initialPlayerColor;
+  const boardOrientation = useMemo(() => puzzle ? initialTurnState : initialPlayerColor === 'random' ? 'white' : initialPlayerColor, [puzzle, initialPlayerColor, initialTurnState]);
 
 
   const [board, setBoard] = useState<Board>(initialBoardState);
@@ -623,7 +623,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
         let startSquare: [number, number] | null = null;
         let endSquare: [number, number] | null = null;
         
-        // This is a simplified SAN parser. It might not handle all ambiguities.
         const moveSAN = showSolutionMove.replace(/[+#x]/g, '');
         const pieceType = ['R', 'N', 'B', 'Q', 'K'].find(p => moveSAN.startsWith(p)) || 'P';
         const targetSquareNotation = moveSAN.slice(-2);
@@ -635,7 +634,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                 const piece = board[r1][c1];
                 if (piece && getPieceColor(piece) === turn && piece.toUpperCase() === pieceType) {
                     if (isValidMove(board, r1, c1, endPos[0], endPos[1], castlingRights)) {
-                         // This is a simplification. A real parser needs to handle disambiguation.
                         startSquare = [r1, c1];
                         endSquare = endPos;
                         break;
@@ -849,15 +847,15 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
        {solutionState.arrow && (
         <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-80" viewBox="0 0 100 100">
             <defs>
-                <marker id="arrowhead" markerWidth="5" markerHeight="3.5" refX="0" refY="1.75" orient="auto">
-                    <polygon points="0 0, 5 1.75, 0 3.5" fill="rgb(34 197 94 / 1)" />
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="rgb(34 197 94 / 0.8)" />
                 </marker>
             </defs>
             <line 
                 x1={solutionState.arrow.x1} y1={solutionState.arrow.y1} 
                 x2={solutionState.arrow.x2} y2={solutionState.arrow.y2} 
-                stroke="rgb(34 197 94 / 1)" 
-                strokeWidth="2.5" 
+                stroke="rgb(34 197 94 / 0.8)" 
+                strokeWidth="3" 
                 markerEnd="url(#arrowhead)" 
             />
         </svg>
@@ -869,3 +867,5 @@ const isLight = (row: number, col: number) => (row + col) % 2 !== 0;
 
 
 export default Chessboard;
+
+    
