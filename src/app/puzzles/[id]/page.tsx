@@ -67,9 +67,9 @@ export default function PuzzlePage() {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
-       <Button variant="ghost" onClick={() => router.push('/puzzles')} className="mb-4">
+       <Button variant="ghost" onClick={() => router.back()} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Puzzles
+          Back
         </Button>
       <div className="grid gap-8 md:grid-cols-3">
         <div className="md:col-span-2">
@@ -152,5 +152,3 @@ export default function PuzzlePage() {
     </div>
   );
 }
-
-    
