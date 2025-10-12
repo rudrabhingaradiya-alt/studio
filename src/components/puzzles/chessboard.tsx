@@ -149,11 +149,18 @@ const moveSan = (board: Board, startRow: number, startCol: number, endRow: numbe
     const isCapture = board[endRow][endCol] !== null;
 
     if (pieceType === 'P') {
+        // This is a simplification. Real SAN for pawn captures can be ambiguous.
         return isCapture ? `${'abcdefgh'[startCol]}x${targetSquare}` : targetSquare;
     }
 
-    // This is a simplified SAN generation. A real one is much more complex.
-    return `${pieceType !== 'P' ? pieceType : ''}${isCapture ? 'x' : ''}${targetSquare}`;
+    // This is a highly simplified SAN generation. A real one is much more complex
+    // as it needs to handle disambiguation (e.g., Rae1 vs Rfe1).
+    let san = pieceType;
+    // For this app's puzzles, simple notation should be fine.
+    if (isCapture) san += 'x';
+    san += targetSquare;
+    
+    return san;
 };
 
 const isMoveValidWithoutCheck = (board: Board, startRow: number, startCol: number, endRow: number, endCol: number): boolean => {
@@ -437,6 +444,8 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     const fen = initialFen || puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     return fenToBoard(fen);
   }, [puzzle, initialFen]);
+  const boardOrientation = puzzle ? initialTurnState : initialPlayerColor === 'random' ? 'white' : initialPlayerColor;
+
 
   const [board, setBoard] = useState<Board>(initialBoardState);
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
@@ -444,15 +453,15 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
   const [turn, setTurn] = useState<PlayerTurn>(initialTurnState);
   const [castlingRights, setCastlingRights] = useState<CastlingRights>(initialCastlingState);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [playerColor, setPlayerColor] = useState<PlayerTurn>('white');
-  const [aiColor, setAiColor] = useState<PlayerTurn>('black');
+  const [playerColor, setPlayerColor] = useState<PlayerTurn>(boardOrientation);
+  const [aiColor, setAiColor] = useState<PlayerTurn>(boardOrientation === 'white' ? 'black' : 'white');
   const [currentTheme, setCurrentTheme] = useState<BoardTheme | undefined>(boardThemes.find(t => t.id === boardThemeId));
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   
-  const boardOrientation = puzzle ? initialTurnState : playerColor;
-
-  const [solutionArrow, setSolutionArrow] = useState<{x1: string, y1: string, x2: string, y2: string} | null>(null);
-
+  const [solutionState, setSolutionState] = useState<{
+      move: { start: [number, number], end: [number, number] } | null;
+      arrow: { x1: string, y1: string, x2: string, y2: string } | null;
+  }>({ move: null, arrow: null });
 
   useEffect(() => {
     setCurrentTheme(boardThemes.find(t => t.id === boardThemeId));
@@ -602,52 +611,46 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
   }, [checkEndGame, aiColor, playerColor, aiLevel]);
   
   useEffect(() => {
-    if (turn === aiColor && !isStatic && !isGameOver && !puzzle) {
+    if (turn === aiColor && !isStatic && !isGameOver && !puzzle && solutionState.move === null) {
       const thinkTime = 500 + Math.random() * 500;
       setTimeout(() => makeAIMove(board, castlingRights), thinkTime);
     }
-  }, [turn, board, castlingRights, isStatic, isGameOver, makeAIMove, aiColor, puzzle]);
-
-  const makeMove = useCallback((startRow: number, startCol: number, endRow: number, endCol: number) => {
-    const newBoard = board.map(r => [...r]);
-    const pieceToMove = newBoard[startRow][startCol];
-    newBoard[endRow][endCol] = pieceToMove;
-    newBoard[startRow][startCol] = null;
-    setBoard(newBoard);
-  }, [board]);
+  }, [turn, board, castlingRights, isStatic, isGameOver, makeAIMove, aiColor, puzzle, solutionState]);
 
 
   useEffect(() => {
-    if (showSolutionMove && puzzle) {
+    if (showSolutionMove && puzzle && solutionState.move === null) {
         let startSquare: [number, number] | null = null;
         let endSquare: [number, number] | null = null;
-
-        const moveSAN = puzzle.solution[0].replace(/[+#]/g, '');
+        
+        // This is a simplified SAN parser. It might not handle all ambiguities.
+        const moveSAN = showSolutionMove.replace(/[+#x]/g, '');
+        const pieceType = ['R', 'N', 'B', 'Q', 'K'].find(p => moveSAN.startsWith(p)) || 'P';
+        const targetSquareNotation = moveSAN.slice(-2);
+        const endPos = notationToSquare(targetSquareNotation);
+        if (!endPos) return;
 
         for (let r1 = 0; r1 < 8; r1++) {
             for (let c1 = 0; c1 < 8; c1++) {
-                if (getPieceColor(board[r1][c1]) === turn) {
-                    for (let r2 = 0; r2 < 8; r2++) {
-                        for (let c2 = 0; c2 < 8; c2++) {
-                            if (isValidMove(board, r1, c1, r2, c2, castlingRights)) {
-                                const san = moveSan(board, r1, c1, r2, c2);
-                                if (san.includes(moveSAN)) {
-                                    startSquare = [r1, c1];
-                                    endSquare = [r2, c2];
-                                    break;
-                                }
-                            }
-                        }
+                const piece = board[r1][c1];
+                if (piece && getPieceColor(piece) === turn && piece.toUpperCase() === pieceType) {
+                    if (isValidMove(board, r1, c1, endPos[0], endPos[1], castlingRights)) {
+                         // This is a simplification. A real parser needs to handle disambiguation.
+                        startSquare = [r1, c1];
+                        endSquare = endPos;
+                        break;
                     }
                 }
-                if (startSquare) break;
             }
             if (startSquare) break;
         }
 
         if (startSquare && endSquare) {
-            makeMove(startSquare[0], startSquare[1], endSquare[0], endSquare[1]);
-
+            const newBoard = board.map(r => [...r]);
+            newBoard[endSquare[0]][endSquare[1]] = newBoard[startSquare[0]][startSquare[1]];
+            newBoard[startSquare[0]][startSquare[1]] = null;
+            setBoard(newBoard);
+            
             const getCoords = (row: number, col: number) => {
                 let r = boardOrientation === 'white' ? row : 7 - row;
                 let c = boardOrientation === 'white' ? col : 7 - col;
@@ -659,20 +662,22 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
             const startCoords = getCoords(startSquare[0], startSquare[1]);
             const endCoords = getCoords(endSquare[0], endSquare[1]);
             
-            setSolutionArrow({
-                x1: `${startCoords.x}%`,
-                y1: `${startCoords.y}%`,
-                x2: `${endCoords.x}%`,
-                y2: `${endCoords.y}%`,
+            setSolutionState({
+                move: { start: startSquare, end: endSquare },
+                arrow: {
+                    x1: `${startCoords.x}%`,
+                    y1: `${startCoords.y}%`,
+                    x2: `${endCoords.x}%`,
+                    y2: `${endCoords.y}%`,
+                },
             });
             onPuzzleCorrect?.();
         }
     }
-  }, [showSolutionMove, puzzle, board, turn, castlingRights, makeMove, onPuzzleCorrect, boardOrientation]);
-
+  }, [showSolutionMove, puzzle, board, turn, castlingRights, onPuzzleCorrect, boardOrientation, solutionState.move]);
 
   const handleSquareClick = (row: number, col: number) => {
-    if (isStatic || turn !== playerColor || isGameOver || showSolutionMove) return;
+    if (isStatic || turn !== playerColor || isGameOver || solutionState.move) return;
 
     const clickedPiece = board[row][col];
     const clickedPieceColor = getPieceColor(clickedPiece);
@@ -701,7 +706,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
 
             // Simple check: does the player's move notation (e.g., "Nxe5") match the end of the solution string?
             if(puzzle.solution.some(s => moveNotation.includes(s.replace(/[+#]/g, '')))) {
-                makeMove(startRow, startCol, row, col);
+                const newBoard = board.map(r => [...r]);
+                newBoard[row][col] = newBoard[startRow][startCol];
+                newBoard[startRow][startCol] = null;
+                setBoard(newBoard);
                 onPuzzleCorrect?.();
             } else {
                 onPuzzleIncorrect?.();
@@ -838,7 +846,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
             </span>
         </div>
       ))}
-       {solutionArrow && (
+       {solutionState.arrow && (
         <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-80" viewBox="0 0 100 100">
             <defs>
                 <marker id="arrowhead" markerWidth="5" markerHeight="3.5" refX="0" refY="1.75" orient="auto">
@@ -846,8 +854,8 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                 </marker>
             </defs>
             <line 
-                x1={solutionArrow.x1} y1={solutionArrow.y1} 
-                x2={solutionArrow.x2} y2={solutionArrow.y2} 
+                x1={solutionState.arrow.x1} y1={solutionState.arrow.y1} 
+                x2={solutionState.arrow.x2} y2={solutionState.arrow.y2} 
                 stroke="rgb(34 197 94 / 1)" 
                 strokeWidth="2.5" 
                 markerEnd="url(#arrowhead)" 
