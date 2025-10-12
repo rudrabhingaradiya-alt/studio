@@ -12,7 +12,7 @@ type GameModeId = 'bot' | 'online' | 'friend';
 const gameModes = [
   {
     id: 'online' as GameModeId,
-    title: 'Play vs Online',
+    title: 'Play Online',
     description: 'Challenge a random opponent from around the world.',
     icon: Users,
     isAvailable: false,

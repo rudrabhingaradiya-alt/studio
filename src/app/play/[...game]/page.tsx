@@ -896,7 +896,7 @@ const gameModes: {
 }[] = [
   {
     id: 'online',
-    title: 'Play vs Online',
+    title: 'Play Online',
     description: 'Challenge a random opponent from around the world.',
     icon: Users,
     isAvailable: false,

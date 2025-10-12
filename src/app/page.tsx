@@ -11,6 +11,14 @@ import { DashboardCard } from '@/components/ui/dashboard-card';
 
 const gameModes = [
   {
+    id: 'online' as const,
+    title: 'Play Online',
+    description: 'Challenge a random opponent from around the world.',
+    icon: Users,
+    isAvailable: false,
+    href: '/play/online'
+  },
+  {
     id: 'bot' as const,
     title: 'Play vs Bot',
     description: 'Test your skills against our AI challenger.',
@@ -25,14 +33,6 @@ const gameModes = [
     icon: User,
     isAvailable: true,
     href: '/play/friend'
-  },
-  {
-    id: 'online' as const,
-    title: 'Play vs Online',
-    description: 'Challenge a random opponent from around the world.',
-    icon: Users,
-    isAvailable: false,
-    href: '/play/online'
   },
 ];
 
