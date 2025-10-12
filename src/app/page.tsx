@@ -86,24 +86,6 @@ export default function Home() {
         </div>
 
         <div className="mt-12 mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
-             <DashboardCard 
-                title="Puzzle Rush"
-                description="Solve as many puzzles as you can in 3 minutes."
-                icon={Timer}
-                onClick={() => router.push('/puzzle-rush')}
-                isAvailable={true}
-            />
-            {dailyPuzzle && (
-                <DashboardCard 
-                    title="Daily Puzzle"
-                    description={`Rating: ${dailyPuzzle.rating} | Theme: ${dailyPuzzle.theme}`}
-                    icon={Calendar}
-                    onClick={() => router.push(`/puzzles/${dailyPuzzle.id}`)}
-                    isAvailable={true}
-                    className="lg:col-span-1 bg-gradient-to-br from-primary/80 to-primary text-primary-foreground"
-                    badgeText="New Challenge"
-                />
-            )}
             {gameModes.find(mode => mode.id === 'online') && (
                  <DashboardCard
                     key={'online'}
@@ -115,6 +97,34 @@ export default function Home() {
                     badgeText={'Coming Soon'}
                 />
             )}
+             {gameModes.find(mode => mode.id === 'bot') && (
+                <DashboardCard
+                    key={'bot'}
+                    title={'Play vs Bot'}
+                    description={'Test your skills against our AI challenger.'}
+                    icon={BrainCircuit}
+                    onClick={() => router.push('/play/bot')}
+                    isAvailable={true}
+                />
+            )}
+            {dailyPuzzle && (
+                <DashboardCard 
+                    title="Daily Puzzle"
+                    description={`Rating: ${dailyPuzzle.rating} | Theme: ${dailyPuzzle.theme}`}
+                    icon={Calendar}
+                    onClick={() => router.push(`/puzzles/${dailyPuzzle.id}`)}
+                    isAvailable={true}
+                    className="lg:col-span-1 bg-gradient-to-br from-primary/80 to-primary text-primary-foreground"
+                    badgeText="New Challenge"
+                />
+            )}
+            <DashboardCard 
+                title="Puzzle Rush"
+                description="Solve as many puzzles as you can in 3 minutes."
+                icon={Timer}
+                onClick={() => router.push('/puzzle-rush')}
+                isAvailable={true}
+            />
              <DashboardCard 
                 title="View All Puzzles"
                 description="Browse our full collection of puzzles."
@@ -122,17 +132,16 @@ export default function Home() {
                 onClick={() => router.push('/puzzles')}
                 isAvailable={true}
             />
-            {gameModes.filter(mode => mode.id !== 'online').map((mode) => (
+            {gameModes.find(mode => mode.id === 'friend') && (
                 <DashboardCard
-                    key={mode.id}
-                    title={mode.title}
-                    description={mode.description}
-                    icon={mode.icon}
-                    onClick={() => router.push(mode.href)}
-                    isAvailable={mode.isAvailable}
-                    badgeText={!mode.isAvailable ? 'Coming Soon' : undefined}
+                    key={'friend'}
+                    title={'Friendly Match'}
+                    description={'Invite a friend to a game using a private link.'}
+                    icon={User}
+                    onClick={() => router.push('/play/friend')}
+                    isAvailable={true}
                 />
-            ))}
+            )}
         </div>
      </div>
   );
