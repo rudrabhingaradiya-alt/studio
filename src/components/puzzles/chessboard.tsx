@@ -611,6 +611,8 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     setBoard(newBoard);
   }, [board]);
 
+  const boardOrientation = puzzle ? initialTurnState : playerColor;
+
   const [solutionMove, solutionArrow] = useMemo(() => {
     if (!showSolutionMove || !puzzle) return [null, null];
 
@@ -774,8 +776,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     }
     setPossibleMoves(moves);
   };
-
-  const boardOrientation = puzzle ? initialTurnState : playerColor;
 
   const files = boardOrientation === 'white' ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
   const ranks = boardOrientation === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
