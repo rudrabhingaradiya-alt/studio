@@ -444,7 +444,13 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     const fen = initialFen || puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     return fenToBoard(fen);
   }, [puzzle, initialFen]);
-  const boardOrientation = useMemo(() => puzzle ? initialTurnState : initialPlayerColor === 'random' ? 'white' : initialPlayerColor, [puzzle, initialPlayerColor, initialTurnState]);
+  
+  const boardOrientation = useMemo(() => {
+    if (puzzle) {
+      return initialTurnState;
+    }
+    return initialPlayerColor === 'random' ? 'white' : initialPlayerColor;
+  }, [puzzle, initialPlayerColor, initialTurnState]);
 
 
   const [board, setBoard] = useState<Board>(initialBoardState);
@@ -610,69 +616,104 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     }
   }, [checkEndGame, aiColor, playerColor, aiLevel]);
   
+  const calculateAndShowSolution = useCallback(() => {
+    if (!showSolutionMove || !puzzle || solutionState.move) return;
+
+    let startSquare: [number, number] | null = null;
+    let endSquare: [number, number] | null = null;
+
+    const moveSAN = showSolutionMove.replace(/[+#x]/g, '');
+    const targetSquareNotation = moveSAN.slice(-2);
+    const endPos = notationToSquare(targetSquareNotation);
+
+    if (!endPos) return;
+
+    const pieceType = ['R', 'N', 'B', 'Q', 'K'].find(p => moveSAN.startsWith(p)) || 'P';
+    
+    for (let r1 = 0; r1 < 8; r1++) {
+        for (let c1 = 0; c1 < 8; c1++) {
+            const piece = board[r1][c1];
+            if (piece && getPieceColor(piece) === turn && piece.toUpperCase() === pieceType) {
+                if (isValidMove(board, r1, c1, endPos[0], endPos[1], castlingRights)) {
+                    startSquare = [r1, c1];
+                    endSquare = endPos;
+                    break;
+                }
+            }
+        }
+        if (startSquare) break;
+    }
+    
+    // Fallback for pawn moves if the above fails
+    if (!startSquare && pieceType === 'P') {
+        const [endRow, endCol] = endPos;
+        const direction = turn === 'white' ? 1 : -1;
+        
+        // one step forward
+        if (board[endRow + direction]?.[endCol]?.toLowerCase() === 'p') {
+             startSquare = [endRow + direction, endCol];
+             endSquare = endPos;
+        }
+        // two steps forward
+        else if (board[endRow + 2 * direction]?.[endCol]?.toLowerCase() === 'p') {
+             startSquare = [endRow + 2 * direction, endCol];
+             endSquare = endPos;
+        }
+        // capture
+        else {
+           const fromFile = moveSAN[0];
+           const startCol = 'abcdefgh'.indexOf(fromFile);
+           if(startCol !== -1 && board[endRow + direction]?.[startCol]?.toLowerCase() === 'p') {
+               startSquare = [endRow + direction, startCol];
+               endSquare = endPos;
+           }
+        }
+    }
+
+
+    if (startSquare && endSquare) {
+        const newBoard = board.map(r => [...r]);
+        newBoard[endSquare[0]][endSquare[1]] = newBoard[startSquare[0]][startSquare[1]];
+        newBoard[startSquare[0]][startSquare[1]] = null;
+        
+        const getCoords = (row: number, col: number) => {
+            let r = boardOrientation === 'white' ? row : 7 - row;
+            let c = boardOrientation === 'white' ? col : 7 - col;
+            const x = c * 12.5 + 6.25;
+            const y = r * 12.5 + 6.25;
+            return { x, y };
+        };
+
+        const startCoords = getCoords(startSquare[0], startSquare[1]);
+        const endCoords = getCoords(endSquare[0], endSquare[1]);
+        
+        setSolutionState({
+            move: { start: startSquare, end: endSquare },
+            arrow: {
+                x1: `${startCoords.x}%`,
+                y1: `${startCoords.y}%`,
+                x2: `${endCoords.x}%`,
+                y2: `${endCoords.y}%`,
+            },
+        });
+        setBoard(newBoard);
+        onPuzzleCorrect?.();
+    }
+  }, [showSolutionMove, puzzle, board, turn, castlingRights, boardOrientation, onPuzzleCorrect, solutionState.move]);
+
   useEffect(() => {
-    if (turn === aiColor && !isStatic && !isGameOver && !puzzle && solutionState.move === null) {
+    if (showSolutionMove) {
+      calculateAndShowSolution();
+    }
+  }, [showSolutionMove, calculateAndShowSolution]);
+
+  useEffect(() => {
+    if (turn === aiColor && !isStatic && !isGameOver && !puzzle) {
       const thinkTime = 500 + Math.random() * 500;
       setTimeout(() => makeAIMove(board, castlingRights), thinkTime);
     }
-  }, [turn, board, castlingRights, isStatic, isGameOver, makeAIMove, aiColor, puzzle, solutionState]);
+  }, [turn, board, castlingRights, isStatic, isGameOver, makeAIMove, aiColor, puzzle]);
 
-
-  useEffect(() => {
-    if (showSolutionMove && puzzle && solutionState.move === null) {
-        let startSquare: [number, number] | null = null;
-        let endSquare: [number, number] | null = null;
-        
-        const moveSAN = showSolutionMove.replace(/[+#x]/g, '');
-        const pieceType = ['R', 'N', 'B', 'Q', 'K'].find(p => moveSAN.startsWith(p)) || 'P';
-        const targetSquareNotation = moveSAN.slice(-2);
-        const endPos = notationToSquare(targetSquareNotation);
-        if (!endPos) return;
-
-        for (let r1 = 0; r1 < 8; r1++) {
-            for (let c1 = 0; c1 < 8; c1++) {
-                const piece = board[r1][c1];
-                if (piece && getPieceColor(piece) === turn && piece.toUpperCase() === pieceType) {
-                    if (isValidMove(board, r1, c1, endPos[0], endPos[1], castlingRights)) {
-                        startSquare = [r1, c1];
-                        endSquare = endPos;
-                        break;
-                    }
-                }
-            }
-            if (startSquare) break;
-        }
-
-        if (startSquare && endSquare) {
-            const newBoard = board.map(r => [...r]);
-            newBoard[endSquare[0]][endSquare[1]] = newBoard[startSquare[0]][startSquare[1]];
-            newBoard[startSquare[0]][startSquare[1]] = null;
-            setBoard(newBoard);
-            
-            const getCoords = (row: number, col: number) => {
-                let r = boardOrientation === 'white' ? row : 7 - row;
-                let c = boardOrientation === 'white' ? col : 7 - col;
-                const x = c * 12.5 + 6.25;
-                const y = r * 12.5 + 6.25;
-                return { x, y };
-            };
-
-            const startCoords = getCoords(startSquare[0], startSquare[1]);
-            const endCoords = getCoords(endSquare[0], endSquare[1]);
-            
-            setSolutionState({
-                move: { start: startSquare, end: endSquare },
-                arrow: {
-                    x1: `${startCoords.x}%`,
-                    y1: `${startCoords.y}%`,
-                    x2: `${endCoords.x}%`,
-                    y2: `${endCoords.y}%`,
-                },
-            });
-            onPuzzleCorrect?.();
-        }
-    }
-  }, [showSolutionMove, puzzle, board, turn, castlingRights, onPuzzleCorrect, boardOrientation, solutionState.move]);
 
   const handleSquareClick = (row: number, col: number) => {
     if (isStatic || turn !== playerColor || isGameOver || solutionState.move) return;
@@ -847,15 +888,15 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
        {solutionState.arrow && (
         <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-80" viewBox="0 0 100 100">
             <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="rgb(34 197 94 / 0.8)" />
+                <marker id="arrowhead" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">
+                    <polygon points="0 0, 4 2, 0 4" fill="rgb(34 197 94 / 0.8)" />
                 </marker>
             </defs>
             <line 
                 x1={solutionState.arrow.x1} y1={solutionState.arrow.y1} 
                 x2={solutionState.arrow.x2} y2={solutionState.arrow.y2} 
                 stroke="rgb(34 197 94 / 0.8)" 
-                strokeWidth="3" 
+                strokeWidth="2.5" 
                 markerEnd="url(#arrowhead)" 
             />
         </svg>
