@@ -603,6 +603,77 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
     }
   }, [turn, board, castlingRights, isStatic, isGameOver, makeAIMove, aiColor, puzzle]);
 
+  const makeMove = useCallback((startRow: number, startCol: number, endRow: number, endCol: number) => {
+    const newBoard = board.map(r => [...r]);
+    const pieceToMove = newBoard[startRow][startCol];
+    newBoard[endRow][endCol] = pieceToMove;
+    newBoard[startRow][startCol] = null;
+    setBoard(newBoard);
+  }, [board]);
+
+  const [solutionMove, solutionArrow] = useMemo(() => {
+    if (!showSolutionMove || !puzzle) return [null, null];
+
+    let startSquare: [number, number] | null = null;
+    let endSquare: [number, number] | null = null;
+    
+    // Simplified SAN parsing for puzzles
+    const move = puzzle.solution[0].replace(/[+#]/g, '');
+
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (getPieceColor(board[r][c]) === turn) {
+                for (let r2 = 0; r2 < 8; r2++) {
+                    for (let c2 = 0; c2 < 8; c2++) {
+                        if(isValidMove(board, r, c, r2, c2, castlingRights)) {
+                            const san = moveSan(board, r, c, r2, c2);
+                            if (san.includes(move)) {
+                                startSquare = [r, c];
+                                endSquare = [r2, c2];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if(startSquare) break;
+        }
+        if(startSquare) break;
+    }
+    
+    if (!startSquare || !endSquare) return [null, null];
+
+    const getCoords = (row: number, col: number) => {
+        let r = boardOrientation === 'white' ? row : 7 - row;
+        let c = boardOrientation === 'white' ? col : 7 - col;
+        const x = c * 12.5 + 6.25;
+        const y = r * 12.5 + 6.25;
+        return { x, y };
+    };
+
+    const startCoords = getCoords(startSquare[0], startSquare[1]);
+    const endCoords = getCoords(endSquare[0], endSquare[1]);
+    
+    const arrow = {
+        x1: `${startCoords.x}%`,
+        y1: `${startCoords.y}%`,
+        x2: `${endCoords.x}%`,
+        y2: `${endCoords.y}%`,
+    }
+
+    return [{ start: startSquare, end: endSquare }, arrow];
+
+  }, [showSolutionMove, puzzle, board, turn, castlingRights, boardOrientation]);
+
+
+  useEffect(() => {
+    if (solutionMove) {
+      const { start, end } = solutionMove;
+      makeMove(start[0], start[1], end[0], end[1]);
+      onPuzzleCorrect?.();
+    }
+  }, [solutionMove, makeMove, onPuzzleCorrect]);
+
 
   const handleSquareClick = (row: number, col: number) => {
     if (isStatic || turn !== playerColor || isGameOver || showSolutionMove) return;
@@ -634,6 +705,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
 
             // Simple check: does the player's move notation (e.g., "Nxe5") match the end of the solution string?
             if(puzzle.solution.some(s => moveNotation.includes(s.replace(/[+#]/g, '')))) {
+                makeMove(startRow, startCol, row, col);
                 onPuzzleCorrect?.();
             } else {
                 onPuzzleIncorrect?.();
@@ -641,43 +713,43 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
                 setPossibleMoves([]);
                 return; 
             }
-        }
-        
-        const newBoard = board.map((r) => [...r]);
-        const san = moveSan(newBoard, startRow, startCol, row, col);
-        const beforeFen = boardToFen(newBoard, playerColor, castlingRights);
+        } else {
+            const san = moveSan(board, startRow, startCol, row, col);
+            const beforeFen = boardToFen(board, playerColor, castlingRights);
 
-        const pieceToMove = newBoard[startRow][startCol];
-        newBoard[row][col] = pieceToMove;
-        newBoard[startRow][startCol] = null;
-        
-        // Handle castling rook move for player
-        if (pieceToMove?.toLowerCase() === 'k' && Math.abs(startCol - col) === 2) {
-            if (col > startCol) { // Kingside
-                newBoard[startRow][5] = newBoard[startRow][7];
-                newBoard[startRow][7] = null;
-            } else { // Queenside
-                newBoard[startRow][3] = newBoard[startRow][0];
-                newBoard[startRow][0] = null;
+            const pieceToMove = board[startRow][startCol];
+            const newBoard = board.map(r => [...r]);
+            newBoard[row][col] = pieceToMove;
+            newBoard[startRow][startCol] = null;
+            
+            // Handle castling rook move for player
+            if (pieceToMove?.toLowerCase() === 'k' && Math.abs(startCol - col) === 2) {
+                if (col > startCol) { // Kingside
+                    newBoard[startRow][5] = newBoard[startRow][7];
+                    newBoard[startRow][7] = null;
+                } else { // Queenside
+                    newBoard[startRow][3] = newBoard[startRow][0];
+                    newBoard[startRow][0] = null;
+                }
             }
-        }
 
-        if (pieceToMove?.toLowerCase() === 'p' && (row === 0 || row === 7)) {
-            newBoard[row][col] = getPieceColor(newBoard[row][col]) === 'white' ? 'Q' : 'q';
-        }
+            if (pieceToMove?.toLowerCase() === 'p' && (row === 0 || row === 7)) {
+                newBoard[row][col] = getPieceColor(newBoard[row][col]) === 'white' ? 'Q' : 'q';
+            }
 
-        const newCastlingRights = updateCastlingRights(castlingRights, pieceToMove, startRow, startCol);
-        setCastlingRights(newCastlingRights);
-        
-        const afterFen = boardToFen(newBoard, aiColor, newCastlingRights);
-        setMoveHistory(prev => [...prev, { before: beforeFen, after: afterFen, san }]);
-        setBoard(newBoard);
-        setSelectedPiece(null);
-        setPossibleMoves([]);
-        if (!puzzle) {
+            const newCastlingRights = updateCastlingRights(castlingRights, pieceToMove, startRow, startCol);
+            setCastlingRights(newCastlingRights);
+            
+            const afterFen = boardToFen(newBoard, aiColor, newCastlingRights);
+            setMoveHistory(prev => [...prev, { before: beforeFen, after: afterFen, san }]);
+            setBoard(newBoard);
+            
             checkEndGame(newBoard, aiColor, newCastlingRights);
             setTurn(aiColor);
         }
+
+        setSelectedPiece(null);
+        setPossibleMoves([]);
       } else {
         setSelectedPiece(null); 
         setPossibleMoves([]);
@@ -711,76 +783,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
   const displayBoard = useMemo(() => {
     return boardOrientation === 'white' ? board : board.map(row => row.slice().reverse()).reverse();
   }, [board, boardOrientation]);
-
-  const solutionArrow = useMemo(() => {
-    if (!showSolutionMove) return null;
-
-    let startNotation: string | undefined;
-    let endNotation: string | undefined;
-
-    const move = showSolutionMove.replace(/[+#]/g, ''); // Clean SAN
-
-    if (move === 'O-O') {
-        startNotation = turn === 'white' ? 'e1' : 'e8';
-        endNotation = turn === 'white' ? 'g1' : 'g8';
-    } else if (move === 'O-O-O') {
-        startNotation = turn === 'white' ? 'e1' : 'e8';
-        endNotation = turn === 'white' ? 'c1' : 'c8';
-    } else {
-        // This is a simplified parser for SAN. It won't handle all ambiguous cases.
-        const pieceType = (move.match(/^[N|B|R|Q|K]/)?.[0] || 'P') as Piece;
-        endNotation = move.slice(-2);
-        
-        const endSquare = notationToSquare(endNotation);
-        if (!endSquare) return null;
-
-        for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
-                const piece = board[r][c];
-                if (piece && getPieceColor(piece) === turn && piece.toUpperCase() === pieceType.toUpperCase()) {
-                    if (isValidMove(board, r, c, endSquare[0], endSquare[1], castlingRights)) {
-                        // This simplistic check takes the first valid move found.
-                        // A full SAN parser is needed for complex ambiguities.
-                        const potentialSan = moveSan(board, r, c, endSquare[0], endSquare[1]);
-                        if(potentialSan.includes(move)) {
-                            startNotation = squareToNotation(r, c);
-                            break;
-                        }
-                    }
-                }
-            }
-            if (startNotation) break;
-        }
-    }
-
-
-    if (!startNotation || !endNotation) return null;
-
-    const startSquare = notationToSquare(startNotation);
-    const endSquare = notationToSquare(endNotation);
-
-    if (!startSquare || !endSquare) return null;
-
-    const getCoords = (row: number, col: number) => {
-        let r = boardOrientation === 'white' ? row : 7 - row;
-        let c = boardOrientation === 'white' ? col : 7 - col;
-        const x = c * 12.5 + 6.25;
-        const y = r * 12.5 + 6.25;
-        return { x, y };
-    };
-
-    const startCoords = getCoords(startSquare[0], startSquare[1]);
-    const endCoords = getCoords(endSquare[0], endSquare[1]);
-    
-    return {
-        x1: `${startCoords.x}%`,
-        y1: `${startCoords.y}%`,
-        x2: `${endCoords.x}%`,
-        y2: `${endCoords.y}%`,
-    }
-
-  }, [showSolutionMove, board, castlingRights, turn, boardOrientation]);
-
+  
   const theme = currentTheme || boardThemes[0];
   const lightSquareClass = theme.light;
   const darkSquareClass = theme.dark;
@@ -864,3 +867,5 @@ const isLight = (row: number, col: number) => (row + col) % 2 !== 0;
 
 
 export default Chessboard;
+
+    

@@ -31,11 +31,13 @@ export default function PuzzlePage() {
   const [showSolution, setShowSolution] = useState(false);
 
   const handleCorrect = () => {
-    setPuzzleState('correct');
-    toast({
-      title: 'Puzzle Solved!',
-      description: 'Great move! You found the solution.',
-    });
+    if (puzzleState !== 'correct') {
+      setPuzzleState('correct');
+      toast({
+        title: 'Puzzle Solved!',
+        description: 'Great move! You found the solution.',
+      });
+    }
   };
 
   const handleIncorrect = () => {
@@ -137,12 +139,12 @@ export default function PuzzlePage() {
                     Show Solution
                   </Button>
                </div>
-               {showSolution && (
+               {showSolution && puzzleState !== 'correct' && (
                   <Alert variant="default" className="border-green-500 bg-green-100 dark:bg-green-900/50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertTitle>Solution Revealed</AlertTitle>
                     <AlertDescription>
-                      The correct move is <strong>{puzzle.solution[0]}</strong>. The arrow on the board shows the move direction.
+                      The correct move is <strong>{puzzle.solution[0]}</strong>.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -153,3 +155,5 @@ export default function PuzzlePage() {
     </div>
   );
 }
+
+    
