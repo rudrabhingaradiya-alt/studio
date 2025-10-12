@@ -331,4 +331,38 @@ export const puzzles: Puzzle[] = [
     difficulty: 'hard',
     theme: 'Mating Net',
   },
+  {
+    id: 'pz041',
+    fen: '2r2rk1/pp1b1ppp/1q2pn2/n2p4/3P4/P1N1PN2/1P1QBPPP/2R2RK1 w - - 4 14',
+    solution: ['Nxd7'],
+    rating: 1350,
+    difficulty: 'medium',
+    theme: 'Discovered Attack',
+  },
+  {
+    id: 'pz042',
+    fen: 'r4rk1/1pqnb1pp/p1p1pn2/3p1p2/2PP1B2/2N1PN2/PPQ2PPP/2R2RK1 b - - 3 13',
+    solution: ['Bd6'],
+    rating: 1600,
+    difficulty: 'hard',
+    theme: 'Pin',
+  },
+  {
+    id: 'pz043',
+    fen: '6k1/6pp/p1p1N3/3p4/3P4/P5P1/5K1P/1r6 w - - 0 33',
+    solution: ['Nc7', 'Rb7'],
+    rating: 1000,
+    difficulty: 'easy',
+    theme: 'Fork',
+  },
+  {
+    id: 'pz044',
+    fen: '5rk1/1p2p2p/p2p2p1/8/2Pb4/1P4P1/P5P1/3R1K2 b - - 1 29',
+    solution: ['Rxf1+', 'Kxf1'],
+    rating: 1400,
+    difficulty: 'medium',
+    theme: 'Endgame Tactic',
+  },
 ];
+
+    
