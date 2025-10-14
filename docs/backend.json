@@ -1,0 +1,222 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Chess Arena application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "googleId": {
+          "type": "string",
+          "description": "The user's Google ID. Used for Google Sign-In."
+        },
+        "appleId": {
+          "type": "string",
+          "description": "The user's Apple ID. Used for Apple Sign-In."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "The date and time the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "creationDate"
+      ]
+    },
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Stores additional profile information for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 UserProfile)"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL of the user's avatar image.",
+          "format": "uri"
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biography or description of the user."
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    },
+    "Puzzle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Puzzle",
+      "type": "object",
+      "description": "Represents a chess puzzle available in the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Puzzle entity."
+        },
+        "fen": {
+          "type": "string",
+          "description": "The FEN (Forsyth–Edwards Notation) representation of the chess position."
+        },
+        "solutionMoves": {
+          "type": "string",
+          "description": "The sequence of moves that solve the puzzle."
+        },
+        "rating": {
+          "type": "number",
+          "description": "The difficulty rating of the puzzle."
+        }
+      },
+      "required": [
+        "id",
+        "fen",
+        "solutionMoves",
+        "rating"
+      ]
+    },
+    "PuzzleHistory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PuzzleHistory",
+      "type": "object",
+      "description": "Stores the history of puzzles solved by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PuzzleHistory entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N PuzzleHistory)"
+        },
+        "puzzleId": {
+          "type": "string",
+          "description": "Reference to Puzzle. (Relationship: Puzzle 1:N PuzzleHistory)"
+        },
+        "solvedDate": {
+          "type": "string",
+          "description": "The date and time the puzzle was solved.",
+          "format": "date-time"
+        },
+        "attempts": {
+          "type": "number",
+          "description": "The number of attempts the user made to solve the puzzle."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "puzzleId",
+        "solvedDate",
+        "attempts"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user account information. Path-based ownership ensures only the authenticated user (or admin roles via existence checks in dedicated /roles_admin/{uid} collection) can access their own data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Auth's uid."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/user_profile/{userProfileId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information. Path-based ownership inherited from /users/{userId} ensures only the authenticated user can access their profile. The `userId` field within the UserProfile document is redundant but supports potential future migrations or edge cases.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Auth's uid."
+            },
+            {
+              "name": "userProfileId",
+              "description": "The unique identifier for the user profile.  Typically, only one profile exists per user, and this ID may match the userId."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/puzzles/{puzzleId}",
+        "definition": {
+          "entityName": "Puzzle",
+          "schema": {
+            "$ref": "#/backend/entities/Puzzle"
+          },
+          "description": "Stores chess puzzle data. Publicly accessible (read-only) to all users. Write access restricted to admin roles, enforced via existence check in /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "puzzleId",
+              "description": "The unique identifier of the puzzle."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/puzzle_history/{puzzleHistoryId}",
+        "definition": {
+          "entityName": "PuzzleHistory",
+          "schema": {
+            "$ref": "#/backend/entities/PuzzleHistory"
+          },
+          "description": "Stores the puzzle history for a specific user. Path-based ownership from /users/{userId} ensures only the authenticated user can access their puzzle history.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Auth's uid."
+            },
+            {
+              "name": "puzzleHistoryId",
+              "description": "The unique identifier for the puzzle history entry."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure prioritizes authorization independence and simplifies security rules. User data and profiles are stored under `/users/{userId}` ensuring path-based ownership. This eliminates the need for complex `get()` calls in security rules to validate user access. Puzzle data is stored in a separate `/puzzles` collection. User puzzle history is stored under `/users/{userId}/puzzle_history/{puzzleHistoryId}`, creating a 1:N relationship that simplifies ownership validation. This structure supports efficient list operations and atomic operations (transactions/batches). It clearly separates user-specific data from global puzzle data. Authentication is handled via Firebase Auth, and roles are managed through path-based ownership, eliminating the need for custom claims."
+  }
+}
