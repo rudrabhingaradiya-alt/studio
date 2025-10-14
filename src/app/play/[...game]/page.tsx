@@ -131,13 +131,26 @@ const BotGenerator = ({ onBotCreated }: { onBotCreated: (newBot: BotLevel) => vo
     )
 }
 
+const timeControlOptions = [
+    { value: 'unlimited', label: 'Unlimited' },
+    { value: '1', label: '1 | 0' },
+    { value: '2 | 1', label: '2 | 1' },
+    { value: '3', label: '3 | 0' },
+    { value: '3 | 2', label: '3 | 2' },
+    { value: '5', label: '5 | 0' },
+    { value: '5 | 3', label: '5 | 3' },
+    { value: '10', label: '10 | 0' },
+    { value: '15 | 10', label: '15 | 10' },
+    { value: '30', label: '30 | 0' },
+];
+
 const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) => void; onBack: () => void }) => {
   const [botLevels, setBotLevels] = useState<BotLevel[]>(initialBotLevels);
   const [selectedLevel, setSelectedLevel] = useState<number>(botLevels[0].rating);
   const [config, setConfig] = useState<BotGameConfig>({
     rating: botLevels[0].rating,
     color: 'random',
-    timeControl: 'unlimited',
+    timeControl: '10',
   });
   const [unlockedLevel, setUnlockedLevel] = useState(botLevels[0].rating);
 
@@ -264,10 +277,9 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
                     <SelectValue placeholder="Select time control" />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="unlimited">Unlimited</SelectItem>
-                    <SelectItem value="5">5 minutes</SelectItem>
-                    <SelectItem value="10">10 minutes</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
+                      {timeControlOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
                     </SelectContent>
                 </Select>
                 </div>
@@ -389,8 +401,21 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
     const [rematchCounter, setRematchCounter] = useState(0);
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
     const { toast } = useToast();
-    const [playerTime, setPlayerTime] = useState(config.timeControl !== 'unlimited' ? parseInt(config.timeControl) * 60 : Infinity);
-    const [botTime, setBotTime] = useState(config.timeControl !== 'unlimited' ? parseInt(config.timeControl) * 60 : Infinity);
+    
+    const parseTimeControl = (timeControl: string) => {
+        if (timeControl === 'unlimited') {
+            return { base: Infinity, increment: 0 };
+        }
+        const parts = timeControl.split('|').map(p => p.trim());
+        const base = parseInt(parts[0], 10) * 60;
+        const increment = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+        return { base, increment };
+    };
+
+    const { base: initialTime, increment } = useMemo(() => parseTimeControl(config.timeControl), [config.timeControl]);
+
+    const [playerTime, setPlayerTime] = useState(initialTime);
+    const [botTime, setBotTime] = useState(initialTime);
     const [activeTurn, setActiveTurn] = useState<'player' | 'bot' | null>(null);
 
     useEffect(() => {
@@ -428,6 +453,11 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
       return () => clearInterval(timer);
     }, [activeTurn, gameResult, config.timeControl]);
 
+    useEffect(() => {
+        if (playerTime === 0) onGameOver('checkmate-black', moveHistory);
+        if (botTime === 0) onGameOver('checkmate-white', moveHistory);
+    }, [playerTime, botTime, onGameOver, moveHistory]);
+
 
     const getBotName = (rating: number) => {
         const bot = initialBotLevels.find(l => l.rating === rating);
@@ -441,11 +471,8 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
         onRematch();
         setRematchCounter(prev => prev + 1);
         setMoveHistory([]);
-        if (config.timeControl !== 'unlimited') {
-            const initialTime = parseInt(config.timeControl) * 60;
-            setPlayerTime(initialTime);
-            setBotTime(initialTime);
-        }
+        setPlayerTime(initialTime);
+        setBotTime(initialTime);
         setActiveTurn(null);
     }
 
@@ -462,6 +489,14 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
     
     const handleMove = (turn: 'white' | 'black') => {
         const playerIsWhite = (config.color === 'white') || (config.color === 'random' && true); // Simplified
+        const movingPlayer = playerIsWhite ? (turn === 'black' ? 'player' : 'bot') : (turn === 'white' ? 'player' : 'bot');
+        
+        if (movingPlayer === 'player' && activeTurn === 'bot') {
+            setBotTime(t => t + increment);
+        } else if (movingPlayer === 'bot' && activeTurn === 'player') {
+            setPlayerTime(t => t + increment);
+        }
+        
         if (playerIsWhite) {
             setActiveTurn(turn === 'white' ? 'player' : 'bot');
         } else {
@@ -473,7 +508,7 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
         if (seconds === Infinity) return '∞';
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
