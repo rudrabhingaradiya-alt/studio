@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import Image from 'next/image';
-import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, RotateCcw, Lightbulb, Trophy, Flag } from 'lucide-react';
+import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, RotateCcw, Lightbulb, Trophy, Flag, TimerIcon } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
@@ -389,6 +389,9 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
     const [rematchCounter, setRematchCounter] = useState(0);
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
     const { toast } = useToast();
+    const [playerTime, setPlayerTime] = useState(config.timeControl !== 'unlimited' ? parseInt(config.timeControl) * 60 : Infinity);
+    const [botTime, setBotTime] = useState(config.timeControl !== 'unlimited' ? parseInt(config.timeControl) * 60 : Infinity);
+    const [activeTurn, setActiveTurn] = useState<'player' | 'bot' | null>(null);
 
     useEffect(() => {
         if (gameResult === 'checkmate-white') { // Player wins
@@ -411,6 +414,20 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
         }
     }, [gameResult, config.rating, toast]);
 
+    useEffect(() => {
+      let timer: NodeJS.Timeout;
+      if (activeTurn && !gameResult && config.timeControl !== 'unlimited') {
+        timer = setInterval(() => {
+          if (activeTurn === 'player') {
+            setPlayerTime(t => t > 0 ? t - 1 : 0);
+          } else {
+            setBotTime(t => t > 0 ? t - 1 : 0);
+          }
+        }, 1000);
+      }
+      return () => clearInterval(timer);
+    }, [activeTurn, gameResult, config.timeControl]);
+
 
     const getBotName = (rating: number) => {
         const bot = initialBotLevels.find(l => l.rating === rating);
@@ -424,6 +441,12 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
         onRematch();
         setRematchCounter(prev => prev + 1);
         setMoveHistory([]);
+        if (config.timeControl !== 'unlimited') {
+            const initialTime = parseInt(config.timeControl) * 60;
+            setPlayerTime(initialTime);
+            setBotTime(initialTime);
+        }
+        setActiveTurn(null);
     }
 
     const handleGameOverWithHistory = (result: GameResult, history: Move[]) => {
@@ -436,6 +459,22 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
         const playerColor = config.color === 'random' ? 'white' : config.color; // Simplified for now
         onGameOver(playerColor === 'white' ? 'resign-white' : 'resign-black', moveHistory);
     }
+    
+    const handleMove = (turn: 'white' | 'black') => {
+        const playerIsWhite = (config.color === 'white') || (config.color === 'random' && true); // Simplified
+        if (playerIsWhite) {
+            setActiveTurn(turn === 'white' ? 'player' : 'bot');
+        } else {
+            setActiveTurn(turn === 'black' ? 'player' : 'bot');
+        }
+    }
+    
+    const formatTime = (seconds: number) => {
+        if (seconds === Infinity) return '∞';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
 
     return (
         <div className="flex h-screen w-screen items-center justify-center bg-background p-4">
@@ -443,29 +482,64 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
                 <ChevronLeft className="h-5 w-5 mr-2" />
                 Exit Game
             </Button>
-            <div className="flex flex-col items-center justify-center">
-                <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
-                    <CardHeader className="text-center">
-                        <CardTitle>vs. {getBotName(config.rating)} ({config.rating})</CardTitle>
-                        <CardDescription>
-                            You are playing against the AI. It's your move.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Chessboard
-                            key={rematchCounter}
-                            aiLevel={config.rating}
-                            onGameOver={handleGameOverWithHistory}
-                            playerColor={config.color}
-                            boardTheme={boardTheme}
-                        />
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="destructive" onClick={() => setShowResignConfirm(true)} className="w-full">
-                            <Flag className="mr-2 h-4 w-4" /> Resign
-                        </Button>
-                    </CardFooter>
-                </Card>
+            <div className="grid w-full max-w-5xl lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 flex flex-col items-center justify-center">
+                    <Card className="w-full max-w-lg animate-in fade-in-50 zoom-in-95">
+                        <CardHeader className="flex flex-row justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={(initialBotLevels.find(b => b.rating === config.rating))?.avatar} />
+                                    <AvatarFallback>{getBotName(config.rating).charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <CardTitle className="text-lg">vs. {getBotName(config.rating)}</CardTitle>
+                                    <CardDescription>({config.rating})</CardDescription>
+                                </div>
+                            </div>
+                            {config.timeControl !== 'unlimited' && (
+                                <div className="flex items-center gap-2 text-lg font-bold p-2 rounded-md bg-muted">
+                                    <TimerIcon className="h-5 w-5"/>
+                                    {formatTime(botTime)}
+                                </div>
+                            )}
+                        </CardHeader>
+                        <CardContent>
+                            <Chessboard
+                                key={rematchCounter}
+                                aiLevel={config.rating}
+                                onGameOver={handleGameOverWithHistory}
+                                playerColor={config.color}
+                                boardTheme={boardTheme}
+                                onMove={handleMove}
+                            />
+                        </CardContent>
+                        <CardHeader className="flex flex-row justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarFallback>Y</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <CardTitle className="text-lg">You</CardTitle>
+                                    <CardDescription>(1200)</CardDescription>
+                                </div>
+                            </div>
+                           {config.timeControl !== 'unlimited' && (
+                                <div className="flex items-center gap-2 text-lg font-bold p-2 rounded-md bg-muted">
+                                    <TimerIcon className="h-5 w-5"/>
+                                    {formatTime(playerTime)}
+                                </div>
+                            )}
+                        </CardHeader>
+                    </Card>
+                </div>
+                 <div className="flex flex-col justify-center space-y-4">
+                     <Button variant="destructive" onClick={() => setShowResignConfirm(true)} className="w-full">
+                         <Flag className="mr-2 h-4 w-4" /> Resign
+                     </Button>
+                      <Button variant="secondary" onClick={handlePlayAgain} className="w-full">
+                         <RotateCcw className="mr-2 h-4 w-4" /> Rematch
+                     </Button>
+                </div>
             </div>
             <GameOverDialog
                 result={gameResult}

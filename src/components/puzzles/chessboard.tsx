@@ -109,6 +109,7 @@ interface ChessboardProps {
   boardTheme?: string;
   initialFen?: string;
   showSolutionMove?: string;
+  onMove?: (turn: PlayerTurn) => void;
 }
 
 const isWhitePiece = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
@@ -439,7 +440,7 @@ const evaluateBoard = (board: Board): number => {
     return totalEvaluation;
 };
 
-const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel = 200, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default', initialFen, showSolutionMove }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel = 200, onGameOver, onPuzzleCorrect, onPuzzleIncorrect, playerColor: initialPlayerColor = 'white', boardTheme: boardThemeId = 'default', initialFen, showSolutionMove, onMove }) => {
   const [initialBoardState, initialTurnState, initialCastlingState] = useMemo(() => {
     const fen = initialFen || puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     return fenToBoard(fen);
@@ -610,11 +611,12 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
       setMoveHistory(prev => [...prev, { before: beforeFen, after: afterFen, san }]);
       setBoard(newBoard);
       setTurn(playerColor);
+      onMove?.(playerColor);
       checkEndGame(newBoard, playerColor, newCastlingRights);
     } else {
         checkEndGame(currentBoard, aiColor, currentCastlingRights);
     }
-  }, [checkEndGame, aiColor, playerColor, aiLevel]);
+  }, [checkEndGame, aiColor, playerColor, aiLevel, onMove]);
   
   const calculateAndShowSolution = useCallback(() => {
     if (!showSolutionMove || !puzzle || solutionState.move) return;
@@ -789,6 +791,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ puzzle, isStatic=false, aiLevel
             
             checkEndGame(newBoard, aiColor, newCastlingRights);
             setTurn(aiColor);
+            onMove?.(aiColor);
         }
 
         setSelectedPiece(null);
