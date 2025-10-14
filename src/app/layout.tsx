@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/context/theme-context';
 import { AuthProvider } from '@/context/auth-context';
 import LayoutProvider from '@/components/layout/layout-provider';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -28,10 +29,12 @@ export default function RootLayout({
       <head />
       <body className="font-body antialiased">
         <ThemeProvider>
-          <AuthProvider>
-            <LayoutProvider>{children}</LayoutProvider>
-            <Toaster />
-          </AuthProvider>
+          <FirebaseClientProvider>
+            <AuthProvider>
+              <LayoutProvider>{children}</LayoutProvider>
+              <Toaster />
+            </AuthProvider>
+          </FirebaseClientProvider>
         </ThemeProvider>
       </body>
     </html>

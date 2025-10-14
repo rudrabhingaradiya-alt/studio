@@ -17,6 +17,7 @@ import GoogleLogo from '@/components/icons/google-logo';
 import AppleLogo from '@/components/icons/apple-logo';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface AuthCardProps {
@@ -26,6 +27,7 @@ interface AuthCardProps {
 export function AuthCard({ mode }: AuthCardProps) {
   const { loginWithGoogle, loginAsGuest } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const title = mode === 'login' ? 'Welcome Back' : 'Create an Account';
   const description =
@@ -54,7 +56,11 @@ export function AuthCard({ mode }: AuthCardProps) {
       router.push('/');
     } catch (error) {
       console.error("Google login failed", error);
-      // You can show a toast notification here
+      toast({
+        variant: 'destructive',
+        title: "Authentication Failed",
+        description: "Could not log in with Google. Please try again."
+      })
     }
   };
 
@@ -72,7 +78,7 @@ export function AuthCard({ mode }: AuthCardProps) {
                 <GoogleLogo className="mr-2 h-4 w-4" />
                 Google
             </Button>
-            <Button variant="outline" className="w-full" onClick={handleAuthAction}>
+            <Button variant="outline" className="w-full" onClick={() => toast({ title: 'Coming Soon!', description: 'Apple sign-in will be available in a future update.'})}>
                 <AppleLogo className="mr-2 h-4 w-4" />
                 Apple
             </Button>

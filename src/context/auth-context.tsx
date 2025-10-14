@@ -4,8 +4,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { GoogleAuthProvider, signInWithPopup, User, signOut } from 'firebase/auth';
+import { useFirebase, useUser } from '@/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -18,32 +18,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
-  const auth = getAuth(app);
+  const { auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
     setIsMounted(true);
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsLoggedIn(!!currentUser || !!Cookies.get('isGuest'));
-    });
-    
-    // Also check for guest cookie on initial load
-    if (Cookies.get('isGuest')) {
-        setIsLoggedIn(true);
-    }
+    const guestStatus = Cookies.get('isGuest') === 'true';
+    setIsGuest(guestStatus);
+  }, []);
 
-    return () => unsubscribe();
-  }, [auth]);
+  const isLoggedIn = !!user || isGuest;
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
       Cookies.remove('isGuest');
+      setIsGuest(false);
     } catch (error) {
       console.error("Error during Google sign-in:", error);
       throw error;
@@ -51,15 +45,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const loginAsGuest = () => {
-    logout(); // Clear any existing auth state
-    setIsLoggedIn(true);
+    if (user) {
+      signOut(auth);
+    }
+    setIsGuest(true);
     Cookies.set('isGuest', 'true', { expires: 1 }); // Guest session for 1 day
   };
 
   const logout = () => {
-    auth.signOut();
+    if (user) {
+      signOut(auth);
+    }
     Cookies.remove('isGuest');
-    setIsLoggedIn(false);
+    setIsGuest(false);
+    // Redirect to home to reflect logged-out state
+    router.push('/');
   };
 
   const value = {
@@ -69,9 +69,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loginAsGuest,
     logout,
   };
-  
-  if (!isMounted) {
-    return null;
+
+  if (!isMounted || isUserLoading) {
+    return null; // or a loading spinner
   }
 
   return (
