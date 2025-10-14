@@ -1,13 +1,11 @@
 
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
-import { AuthCard } from '@/components/auth/auth-card';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { BrainCircuit, User, Users, Calendar, Puzzle as PuzzleIcon, Timer } from 'lucide-react';
 import { puzzles, type Puzzle } from '@/lib/puzzles';
 import { DashboardCard } from '@/components/ui/dashboard-card';
+import { AuthCard } from '@/components/auth/auth-card';
+import Link from 'next/link';
 
 const gameModes = [
   {
@@ -36,12 +34,7 @@ const gameModes = [
   },
 ];
 
-export default function Home() {
-  const { isLoggedIn } = useAuth();
-  const router = useRouter();
-  const [dailyPuzzle, setDailyPuzzle] = useState<Puzzle | null>(null);
-
-  useEffect(() => {
+function getDailyPuzzle(): Puzzle {
     const getDayOfYear = () => {
       const now = new Date();
       const start = new Date(now.getFullYear(), 0, 0);
@@ -51,8 +44,12 @@ export default function Home() {
     };
     const dayOfYear = getDayOfYear();
     const puzzleIndex = dayOfYear % puzzles.length;
-    setDailyPuzzle(puzzles[puzzleIndex]);
-  }, []);
+    return puzzles[puzzleIndex];
+}
+
+export default function Home() {
+  const isLoggedIn = !!cookies().get('isLoggedIn')?.value;
+  const dailyPuzzle = getDailyPuzzle();
 
   if (!isLoggedIn) {
       return (
@@ -87,60 +84,72 @@ export default function Home() {
 
         <div className="mt-12 mx-auto grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-3">
             {gameModes.find(mode => mode.id === 'online') && (
-                 <DashboardCard
-                    key={'online'}
-                    title={'Play Online'}
-                    description={'Challenge a random opponent from around the world.'}
-                    icon={Users}
-                    onClick={() => router.push('/play/online')}
-                    isAvailable={false}
-                    badgeText={'Coming Soon'}
-                />
+                 <Link href="/play/online">
+                     <DashboardCard
+                        key={'online'}
+                        title={'Play Online'}
+                        description={'Challenge a random opponent from around the world.'}
+                        icon={Users}
+                        onClick={() => {}}
+                        isAvailable={false}
+                        badgeText={'Coming Soon'}
+                    />
+                 </Link>
             )}
              {gameModes.find(mode => mode.id === 'bot') && (
-                <DashboardCard
-                    key={'bot'}
-                    title={'Play vs Bot'}
-                    description={'Test your skills against our AI challenger.'}
-                    icon={BrainCircuit}
-                    onClick={() => router.push('/play/bot')}
-                    isAvailable={true}
-                />
+                <Link href="/play/bot">
+                    <DashboardCard
+                        key={'bot'}
+                        title={'Play vs Bot'}
+                        description={'Test your skills against our AI challenger.'}
+                        icon={BrainCircuit}
+                        onClick={() => {}}
+                        isAvailable={true}
+                    />
+                </Link>
             )}
             {dailyPuzzle && (
-                <DashboardCard 
-                    title="Daily Puzzle"
-                    description={`Rating: ${dailyPuzzle.rating} | Theme: ${dailyPuzzle.theme}`}
-                    icon={Calendar}
-                    onClick={() => router.push(`/puzzles/${dailyPuzzle.id}`)}
-                    isAvailable={true}
-                    className="lg:col-span-1 bg-gradient-to-br from-primary/80 to-primary text-primary-foreground"
-                    badgeText="New Challenge"
-                />
+                <Link href={`/puzzles/${dailyPuzzle.id}`}>
+                    <DashboardCard 
+                        title="Daily Puzzle"
+                        description={`Rating: ${dailyPuzzle.rating} | Theme: ${dailyPuzzle.theme}`}
+                        icon={Calendar}
+                        onClick={() => {}}
+                        isAvailable={true}
+                        className="lg:col-span-1 bg-gradient-to-br from-primary/80 to-primary text-primary-foreground"
+                        badgeText="New Challenge"
+                    />
+                </Link>
             )}
-            <DashboardCard 
-                title="Puzzle Rush"
-                description="Solve as many puzzles as you can in 3 minutes."
-                icon={Timer}
-                onClick={() => router.push('/puzzle-rush')}
-                isAvailable={true}
-            />
-             <DashboardCard 
-                title="View All Puzzles"
-                description="Browse our full collection of puzzles."
-                icon={PuzzleIcon}
-                onClick={() => router.push('/puzzles')}
-                isAvailable={true}
-            />
-            {gameModes.find(mode => mode.id === 'friend') && (
-                <DashboardCard
-                    key={'friend'}
-                    title={'Friendly Match'}
-                    description={'Invite a friend to a game using a private link.'}
-                    icon={User}
-                    onClick={() => router.push('/play/friend')}
+            <Link href="/puzzle-rush">
+                <DashboardCard 
+                    title="Puzzle Rush"
+                    description="Solve as many puzzles as you can in 3 minutes."
+                    icon={Timer}
+                    onClick={() => {}}
                     isAvailable={true}
                 />
+            </Link>
+             <Link href="/puzzles">
+                <DashboardCard 
+                    title="View All Puzzles"
+                    description="Browse our full collection of puzzles."
+                    icon={PuzzleIcon}
+                    onClick={() => {}}
+                    isAvailable={true}
+                />
+            </Link>
+            {gameModes.find(mode => mode.id === 'friend') && (
+                 <Link href="/play/friend">
+                    <DashboardCard
+                        key={'friend'}
+                        title={'Friendly Match'}
+                        description={'Invite a friend to a game using a private link.'}
+                        icon={User}
+                        onClick={() => {}}
+                        isAvailable={true}
+                    />
+                </Link>
             )}
         </div>
      </div>

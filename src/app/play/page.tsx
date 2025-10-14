@@ -1,11 +1,11 @@
 
-'use client';
 
 import { useRouter } from 'next/navigation';
 import { BrainCircuit, User, Users, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 type GameModeId = 'bot' | 'online' | 'friend';
 
@@ -34,20 +34,14 @@ const gameModes = [
 ];
 
 export default function PlayPage() {
-  const router = useRouter();
-
-  const handleModeSelect = (modeId: GameModeId) => {
-    const mode = gameModes.find(m => m.id === modeId);
-    if (mode && mode.isAvailable) {
-      router.push(`/play/${mode.id}`);
-    }
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
-       <Button variant="ghost" onClick={() => router.back()} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
+       <Button variant="ghost" asChild className="mb-4">
+        <Link href="/">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Link>
       </Button>
       <div className="mx-auto max-w-3xl text-center">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
@@ -60,28 +54,28 @@ export default function PlayPage() {
 
       <div className="mt-12 mx-auto grid max-w-4xl gap-6 md:grid-cols-3">
         {gameModes.map((mode) => (
-          <Card
-            key={mode.id}
-            onClick={() => handleModeSelect(mode.id)}
-            className={`flex flex-col text-center transition-all ${
-              mode.isAvailable
-                ? 'cursor-pointer hover:border-primary hover:shadow-lg'
-                : 'cursor-not-allowed opacity-60'
-            }`}
-          >
-            <CardHeader className="items-center">
-              <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
-                <mode.icon className="h-8 w-8" />
-              </div>
-              <CardTitle>{mode.title}</CardTitle>
-              {!mode.isAvailable && (
-                <Badge variant="secondary" className="mt-2">Coming Soon</Badge>
-              )}
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <CardDescription>{mode.description}</CardDescription>
-            </CardContent>
-          </Card>
+          <Link key={mode.id} href={mode.isAvailable ? `/play/${mode.id}` : '#'} passHref>
+             <Card
+                className={`flex flex-col text-center transition-all h-full ${
+                  mode.isAvailable
+                    ? 'cursor-pointer hover:border-primary hover:shadow-lg'
+                    : 'cursor-not-allowed opacity-60'
+                }`}
+              >
+              <CardHeader className="items-center">
+                <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
+                  <mode.icon className="h-8 w-8" />
+                </div>
+                <CardTitle>{mode.title}</CardTitle>
+                {!mode.isAvailable && (
+                  <Badge variant="secondary" className="mt-2">Coming Soon</Badge>
+                )}
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <CardDescription>{mode.description}</CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

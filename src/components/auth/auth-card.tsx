@@ -15,12 +15,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import GoogleLogo from '@/components/icons/google-logo';
 import AppleLogo from '@/components/icons/apple-logo';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
+
 
 interface AuthCardProps {
   mode: 'login' | 'signup';
 }
 
 export function AuthCard({ mode }: AuthCardProps) {
+  const { login } = useAuth();
+  const router = useRouter();
+
   const title = mode === 'login' ? 'Welcome Back' : 'Create an Account';
   const description =
     mode === 'login'
@@ -32,6 +38,17 @@ export function AuthCard({ mode }: AuthCardProps) {
   const footerLink = mode === 'login' ? '/signup' : '/login';
   const footerLinkText = mode === 'login' ? 'Sign up' : 'Log in';
 
+  const handleAuthAction = () => {
+    login();
+    router.push('/');
+    router.refresh();
+  }
+  
+  const handleGuest = () => {
+    login();
+    router.push('/');
+  }
+
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center">
@@ -41,17 +58,13 @@ export function AuthCard({ mode }: AuthCardProps) {
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/play">
+            <Button variant="outline" className="w-full" onClick={handleAuthAction}>
                 <GoogleLogo className="mr-2 h-4 w-4" />
                 Google
-              </Link>
             </Button>
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/play">
+            <Button variant="outline" className="w-full" onClick={handleAuthAction}>
                 <AppleLogo className="mr-2 h-4 w-4" />
                 Apple
-              </Link>
             </Button>
           </div>
           <div className="relative">
@@ -73,10 +86,10 @@ export function AuthCard({ mode }: AuthCardProps) {
             <Input id="password" type="password" />
           </div>
           <Button
-            asChild
+            onClick={handleAuthAction}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Link href="/play">{buttonText}</Link>
+            {buttonText}
           </Button>
         </div>
       </CardContent>
@@ -90,8 +103,8 @@ export function AuthCard({ mode }: AuthCardProps) {
             {footerLinkText}
           </Link>
         </div>
-        <Button variant="link" className="text-accent" asChild>
-          <Link href="/play">Continue as Guest</Link>
+        <Button variant="link" className="text-accent" onClick={handleGuest}>
+            Continue as Guest
         </Button>
       </CardFooter>
     </Card>

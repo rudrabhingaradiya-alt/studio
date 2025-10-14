@@ -1,10 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import Image from 'next/image';
 import { BrainCircuit, User, Users, ChevronLeft, Link as LinkIcon, Clipboard, Settings, Lock, CheckCircle, Wand2, Loader2, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, RotateCcw, Lightbulb, Trophy, Flag } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -36,6 +37,21 @@ import type { GameAnalysisOutput } from '@/ai/flows/game-analysis-flow';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+const GameReview = dynamic(() => import('@/components/game/game-review').then(mod => mod.GameReview), {
+    loading: () => <div className="flex h-screen w-screen items-center justify-center bg-background p-4 flex-col gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <h2 className="text-xl font-semibold text-muted-foreground">Loading Review...</h2>
+    </div>,
+    ssr: false
+});
+
+const FriendLobby = dynamic(() => import('@/components/game/friend-lobby').then(mod => mod.FriendLobby), {
+    loading: () => <div className="flex h-screen w-screen items-center justify-center bg-background p-4 flex-col gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <h2 className="text-xl font-semibold text-muted-foreground">Loading Lobby...</h2>
+    </div>,
+    ssr: false
+});
 
 interface BotGameConfig {
   rating: number;
@@ -266,108 +282,6 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
   )
 }
 
-const FriendLobby = ({ onBack }: { onBack: () => void }) => {
-  const [gameLink, setGameLink] = useState('');
-  const [joinLink, setJoinLink] = useState('');
-  const { toast } = useToast();
-  const router = useRouter();
-
-  const handleCreateGame = () => {
-    const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
-    const link = `${window.location.origin}/play/${gameId}`;
-    setGameLink(link);
-  };
-  
-  const handleCopyToClipboard = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(gameLink);
-      toast({
-        title: 'Copied to clipboard!',
-        description: 'The game link is ready to be shared.',
-      });
-    }
-  };
-
-  const handleJoinGame = () => {
-    if (joinLink && joinLink.includes('/play/game_')) {
-      router.push(joinLink);
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Link',
-        description: 'Please paste a valid game link to join.',
-      });
-    }
-  };
-
-  return (
-    <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
-      <div className="relative mx-auto max-w-2xl text-center">
-        <Button variant="ghost" onClick={onBack} className="absolute top-0 left-0 -translate-y-1/2">
-          <ChevronLeft className="h-5 w-5 mr-2" />
-          Back
-        </Button>
-        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
-          Friendly Match
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          Create or join a private game to start.
-        </p>
-      </div>
-
-      <div className="mt-12 mx-auto max-w-md grid gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create a Game</CardTitle>
-            <CardDescription>
-              {gameLink ? 'Share this link with your friend.' : 'Click the button to generate a unique game link.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {gameLink ? (
-              <div className="flex items-center space-x-2">
-                <Input value={gameLink} readOnly className="flex-grow" />
-                <Button variant="outline" size="icon" onClick={handleCopyToClipboard}>
-                  <Clipboard className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <Button className="w-full" onClick={handleCreateGame}>
-                <LinkIcon className="mr-2 h-4 w-4" />
-                Create Game Link
-              </Button>
-            )}
-            {gameLink && (
-              <p className="mt-4 text-sm text-muted-foreground text-center">
-                Waiting for friend to join...
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Join a Game</CardTitle>
-            <CardDescription>
-              Paste a game link below to join your friend's match.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div className="flex items-center space-x-2">
-                <Input 
-                    placeholder="Paste game link here..." 
-                    value={joinLink}
-                    onChange={(e) => setJoinLink(e.target.value)}
-                />
-                <Button onClick={handleJoinGame}>Join</Button>
-              </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
 const GameOverDialog = ({
   result,
   onPlayAgain,
@@ -572,142 +486,6 @@ const BotGameScreen = ({ config, onExit, onRematch, gameResult, onGameOver, onGa
         </div>
     );
 }
-
-const GameReview = ({ analysis, moveHistory, onBack }: { analysis: GameAnalysisOutput, moveHistory: Move[], onBack: () => void }) => {
-    const { boardTheme } = useTheme();
-    const [currentMoveIndex, setCurrentMoveIndex] = useState(moveHistory.length - 1);
-
-    const moveClassificationStyles = {
-        brilliant: { icon: <Sparkles className="text-cyan-400" />, text: 'text-cyan-400', label: 'Brilliant' },
-        great: { icon: <CheckCircle className="text-blue-500" />, text: 'text-blue-500', label: 'Great' },
-        best: { icon: <CheckCircle className="text-green-500" />, text: 'text-green-500', label: 'Best' },
-        excellent: { icon: <CheckCircle className="text-green-400" />, text: 'text-green-400', label: 'Excellent' },
-        good: { icon: <CheckCircle className="text-lime-500" />, text: 'text-lime-500', label: 'Good' },
-        book: { icon: <BookOpen className="text-gray-400" />, text: 'text-gray-400', label: 'Book' },
-        inaccuracy: { icon: <AlertTriangle className="text-yellow-500" />, text: 'text-yellow-500', label: 'Inaccuracy' },
-        mistake: { icon: <AlertTriangle className="text-orange-500" />, text: 'text-orange-500', label: 'Mistake' },
-        miss: { icon: <XCircle className="text-purple-500" />, text: 'text-purple-500', label: 'Miss' },
-        blunder: { icon: <XCircle className="text-red-600" />, text: 'text-red-600', label: 'Blunder' },
-    };
-
-    const overallAccuracy = useMemo(() => {
-        if (!analysis.opening || !analysis.middlegame || !analysis.endgame) return 0;
-        const total = analysis.opening.accuracy + analysis.middlegame.accuracy + analysis.endgame.accuracy;
-        return Math.round(total / 3);
-    }, [analysis]);
-
-    return (
-        <div className="container mx-auto px-4 py-8 md:py-12 animate-in fade-in-50">
-            <Button variant="ghost" onClick={onBack} className="mb-4">
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Back to Menu
-            </Button>
-            <div className="grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                    <Chessboard
-                        isStatic
-                        boardTheme={boardTheme}
-                        initialFen={moveHistory[currentMoveIndex]?.before}
-                    />
-                </div>
-                <div className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Game Review</CardTitle>
-                             <CardDescription>Overall Accuracy: {overallAccuracy}%</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {analysis.opening && (
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <Label>Opening</Label>
-                                        <span className="text-sm font-bold">{analysis.opening.accuracy}%</span>
-                                    </div>
-                                    <Progress value={analysis.opening.accuracy} />
-                                    <p className="text-xs text-muted-foreground mt-1">{analysis.opening.summary}</p>
-                                </div>
-                            )}
-                            {analysis.middlegame && (
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <Label>Middlegame</Label>
-                                        <span className="text-sm font-bold">{analysis.middlegame.accuracy}%</span>
-                                    </div>
-                                    <Progress value={analysis.middlegame.accuracy} />
-                                    <p className="text-xs text-muted-foreground mt-1">{analysis.middlegame.summary}</p>
-                                </div>
-                            )}
-                           {analysis.endgame && (
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <Label>Endgame</Label>
-                                        <span className="text-sm font-bold">{analysis.endgame.accuracy}%</span>
-                                    </div>
-                                    <Progress value={analysis.endgame.accuracy} />
-                                    <p className="text-xs text-muted-foreground mt-1">{analysis.endgame.summary}</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {analysis.moveAnalysis && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Move Analysis</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ScrollArea className="h-64">
-                                    <div className="flex flex-col gap-2">
-                                    {analysis.moveAnalysis.map((move, index) => {
-                                        const styles = moveClassificationStyles[move.classification];
-                                        const moveNumber = Math.floor(index / 2) + 1;
-                                        const isWhiteMove = index % 2 === 0;
-
-                                        return (
-                                            <div 
-                                                key={index}
-                                                onClick={() => setCurrentMoveIndex(index + 1)}
-                                                className={cn(
-                                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                                    currentMoveIndex === index + 1 ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'
-                                                )}
-                                            >
-                                                <span className="w-8 text-sm text-muted-foreground">{isWhiteMove ? `${moveNumber}.` : ''}</span>
-                                                <span className="font-bold w-16">{move.move}</span>
-                                                <div className={cn("flex items-center gap-1", styles.text)}>
-                                                    {styles.icon}
-                                                    <span className="text-sm font-semibold">{styles.label}</span>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                    </div>
-                                </ScrollArea>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                     {analysis.keyMoments && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Key Moments</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {analysis.keyMoments.map((moment, index) => (
-                                    <Alert key={index} className="mb-2">
-                                        <Trophy className="h-4 w-4" />
-                                        <AlertTitle>Key Moment: {moment.move}</AlertTitle>
-                                        <AlertDescription>{moment.description}</AlertDescription>
-                                    </Alert>
-                                ))}
-                            </CardContent>
-                        </Card>
-                     )}
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export default function PlayPage() {
   const router = useRouter();

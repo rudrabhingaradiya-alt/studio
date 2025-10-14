@@ -2,6 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -17,28 +18,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     setIsMounted(true);
-    try {
-      const storedAuth = localStorage.getItem('isLoggedIn');
-      if (storedAuth) {
-        setIsLoggedIn(JSON.parse(storedAuth));
-      }
-    } catch (error) {
-      console.error('Failed to parse auth status from localStorage', error);
+    const storedAuth = Cookies.get('isLoggedIn');
+    if (storedAuth) {
+      setIsLoggedIn(JSON.parse(storedAuth));
     }
   }, []);
 
   const login = () => {
     setIsLoggedIn(true);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('isLoggedIn', JSON.stringify(true));
-    }
+    Cookies.set('isLoggedIn', 'true', { expires: 7 }); // expires in 7 days
   };
 
   const logout = () => {
     setIsLoggedIn(false);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('isLoggedIn', JSON.stringify(false));
-    }
+    Cookies.remove('isLoggedIn');
   };
 
   const value = {
@@ -47,7 +40,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
   };
   
-  // Prevent rendering children until mounted on the client
   if (!isMounted) {
     return null;
   }
