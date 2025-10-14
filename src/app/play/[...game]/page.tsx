@@ -133,15 +133,10 @@ const BotGenerator = ({ onBotCreated }: { onBotCreated: (newBot: BotLevel) => vo
 
 const timeControlOptions = [
     { value: 'unlimited', label: 'Unlimited' },
-    { value: '1', label: '1 | 0' },
     { value: '2 | 1', label: '2 | 1' },
-    { value: '3', label: '3 | 0' },
     { value: '3 | 2', label: '3 | 2' },
-    { value: '5', label: '5 | 0' },
     { value: '5 | 3', label: '5 | 3' },
-    { value: '10', label: '10 | 0' },
     { value: '15 | 10', label: '15 | 10' },
-    { value: '30', label: '30 | 0' },
 ];
 
 const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) => void; onBack: () => void }) => {
@@ -150,7 +145,7 @@ const BotGameSetup = ({ onStart, onBack }: { onStart: (config: BotGameConfig) =>
   const [config, setConfig] = useState<BotGameConfig>({
     rating: botLevels[0].rating,
     color: 'random',
-    timeControl: '10',
+    timeControl: 'unlimited',
   });
   const [unlockedLevel, setUnlockedLevel] = useState(botLevels[0].rating);
 
