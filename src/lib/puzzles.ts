@@ -363,6 +363,30 @@ export const puzzles: Puzzle[] = [
     difficulty: 'medium',
     theme: 'Endgame Tactic',
   },
+  {
+    id: 'pz045',
+    fen: 'r1b1k2r/pp1p1ppp/1q2pn2/8/1b2P3/2N1Q3/PPP2PPP/R1B1K2R w KQkq - 2 9',
+    solution: ['Nxe5'],
+    rating: 1050,
+    difficulty: 'easy',
+    theme: 'Fork',
+  },
+  {
+    id: 'pz046',
+    fen: '8/8/5k2/R7/5K2/8/8/8 w - - 1 54',
+    solution: ['Ra6+'],
+    rating: 1400,
+    difficulty: 'medium',
+    theme: 'Endgame',
+  },
+  {
+    id: 'pz047',
+    fen: 'r4rk1/1p2qppp/p1p5/4n3/4PQ2/2N5/PPP3PP/3R1RK1 b - - 3 18',
+    solution: ['f6'],
+    rating: 1900,
+    difficulty: 'hard',
+    theme: 'Prophylaxis',
+  },
 ];
 
     
