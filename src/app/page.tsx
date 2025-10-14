@@ -1,11 +1,12 @@
 
-import { cookies } from 'next/headers';
+'use client';
 import { redirect } from 'next/navigation';
 import { BrainCircuit, User, Users, Calendar, Puzzle as PuzzleIcon, Timer } from 'lucide-react';
 import { puzzles, type Puzzle } from '@/lib/puzzles';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 import { AuthCard } from '@/components/auth/auth-card';
 import Link from 'next/link';
+import { useAuth } from '@/context/auth-context';
 
 const gameModes = [
   {
@@ -48,7 +49,7 @@ function getDailyPuzzle(): Puzzle {
 }
 
 export default function Home() {
-  const isLoggedIn = !!cookies().get('isLoggedIn')?.value;
+  const { isLoggedIn } = useAuth();
   const dailyPuzzle = getDailyPuzzle();
 
   if (!isLoggedIn) {

@@ -24,7 +24,7 @@ interface AuthCardProps {
 }
 
 export function AuthCard({ mode }: AuthCardProps) {
-  const { login } = useAuth();
+  const { loginWithGoogle, loginAsGuest } = useAuth();
   const router = useRouter();
 
   const title = mode === 'login' ? 'Welcome Back' : 'Create an Account';
@@ -39,15 +39,25 @@ export function AuthCard({ mode }: AuthCardProps) {
   const footerLinkText = mode === 'login' ? 'Sign up' : 'Log in';
 
   const handleAuthAction = () => {
-    login();
+    // Placeholder for email/password auth
     router.push('/');
-    router.refresh();
   }
   
   const handleGuest = () => {
-    login();
+    loginAsGuest();
     router.push('/');
   }
+  
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      router.push('/');
+    } catch (error) {
+      console.error("Google login failed", error);
+      // You can show a toast notification here
+    }
+  };
+
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -58,7 +68,7 @@ export function AuthCard({ mode }: AuthCardProps) {
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full" onClick={handleAuthAction}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
                 <GoogleLogo className="mr-2 h-4 w-4" />
                 Google
             </Button>

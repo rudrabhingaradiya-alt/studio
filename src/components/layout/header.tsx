@@ -30,7 +30,7 @@ const navLinks = [
 ];
 
 const UserDropdown = () => {
-  const { isLoggedIn, login, logout } = useAuth();
+  const { user, isLoggedIn, logout } = useAuth();
 
   return (
     <DropdownMenu>
@@ -43,12 +43,10 @@ const UserDropdown = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {isLoggedIn ? 'Player One' : 'Guest'}
+              {user ? user.displayName : 'Guest'}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {isLoggedIn
-                ? 'player.one@chessarena.com'
-                : 'guest@chessarena.com'}
+              {user ? user.email : 'guest@chessarena.com'}
             </p>
           </div>
         </DropdownMenuLabel>
