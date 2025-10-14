@@ -1,4 +1,5 @@
 
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { BrainCircuit, User, Users, ArrowLeft } from 'lucide-react';
