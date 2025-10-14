@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, User, TrendingUp } from 'lucide-react';
+import { Menu, User, TrendingUp, LogOut } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -76,7 +76,7 @@ const UserDropdown = () => {
 };
 
 const Header = () => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -104,6 +104,10 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         <div className="flex w-full items-center justify-between md:hidden">
+           <Link href="/" className="flex items-center space-x-2">
+            <Logo className="h-6 w-6" />
+            <span className="font-bold">Chess Arena</span>
+          </Link>
            <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -111,14 +115,14 @@ const Header = () => {
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="pr-0">
+              <SheetContent side="right" className="pr-0 flex flex-col">
                 <SheetClose asChild>
                   <Link href="/" className="flex items-center space-x-2">
                     <Logo className="h-6 w-6" />
                     <span className="font-bold">Chess Arena</span>
                   </Link>
                 </SheetClose>
-                <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+                <div className="my-4 flex-grow pb-10 pl-6">
                   {isLoggedIn && (
                     <div className="flex flex-col space-y-3">
                       {navLinks.map((link) => (
@@ -131,23 +135,18 @@ const Header = () => {
                     </div>
                   )}
                 </div>
+                 {isLoggedIn && (
+                    <div className="border-t pl-6 py-4">
+                        <SheetClose asChild>
+                            <Button variant="ghost" onClick={logout} className="w-full justify-start">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Log out
+                            </Button>
+                        </SheetClose>
+                    </div>
+                 )}
               </SheetContent>
             </Sheet>
-          
-          <Link href="/" className="flex items-center space-x-2">
-            <Logo className="h-6 w-6" />
-            <span className="font-bold">Chess Arena</span>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            {isLoggedIn && (
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                1200
-              </div>
-            )}
-            <UserDropdown />
-          </div>
         </div>
 
         {/* Desktop User Menu */}
