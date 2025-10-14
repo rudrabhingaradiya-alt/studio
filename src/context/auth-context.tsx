@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import { GoogleAuthProvider, signInWithPopup, User, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithRedirect, User, signOut } from 'firebase/auth';
 import { useFirebase, useUser } from '@/firebase';
 
 interface AuthContextType {
@@ -30,16 +30,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsGuest(guestStatus);
   }, []);
 
+  useEffect(() => {
+    if (user) {
+        Cookies.remove('isGuest');
+        setIsGuest(false);
+    }
+  }, [user]);
+
   const isLoggedIn = !!user || isGuest;
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      Cookies.remove('isGuest');
-      setIsGuest(false);
+      await signInWithRedirect(auth, provider);
+      // The redirect will cause the page to reload, and the onAuthStateChanged
+      // listener will handle the user state.
     } catch (error) {
-      console.error("Error during Google sign-in:", error);
+      console.error("Error during Google sign-in redirect:", error);
       throw error;
     }
   };
