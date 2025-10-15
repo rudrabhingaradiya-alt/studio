@@ -12,9 +12,8 @@ export default function LayoutProvider({
 }) {
   const pathname = usePathname();
   const isGamePage =
-    pathname.startsWith('/play/') &&
-    pathname.split('/').length > 2 &&
-    pathname !== '/play/friend';
+    (pathname.startsWith('/play/') && pathname.split('/').length > 2 && !pathname.endsWith('/friend')) || pathname.startsWith('/puzzles/');
+
 
   return (
     <div className="flex min-h-screen flex-col">

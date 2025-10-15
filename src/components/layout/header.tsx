@@ -43,15 +43,15 @@ const UserDropdown = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user ? user.displayName : 'Guest'}
+              {isLoggedIn ? (user ? user.displayName || 'User' : 'Guest') : 'Guest'}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user ? user.email : 'guest@chessarena.com'}
+              {isLoggedIn ? (user ? user.email : 'guest@chessarena.com') : 'guest@chessarena.com'}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {isLoggedIn ? (
+        {isLoggedIn && user ? (
           <>
             <DropdownMenuItem asChild>
               <Link href="/profile">Profile</Link>
@@ -85,19 +85,17 @@ const Header = () => {
             <Logo className="h-6 w-6" />
             <span className="font-bold">Chess Arena</span>
           </Link>
-          {isLoggedIn && (
-            <nav className="flex items-center space-x-6 text-sm font-medium">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="transition-colors hover:text-foreground/80 text-foreground/60"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          )}
+          <nav className="flex items-center space-x-6 text-sm font-medium">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="transition-colors hover:text-foreground/80 text-foreground/60"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         {/* Mobile Navigation */}
@@ -121,7 +119,6 @@ const Header = () => {
                   </Link>
                 </SheetClose>
                 <div className="my-4 flex-grow pb-10 pl-6">
-                  {isLoggedIn && (
                     <div className="flex flex-col space-y-3">
                       {navLinks.map((link) => (
                         <SheetClose asChild key={link.href}>
@@ -131,9 +128,8 @@ const Header = () => {
                         </SheetClose>
                       ))}
                     </div>
-                  )}
                 </div>
-                 {isLoggedIn && (
+                 {isLoggedIn && user && (
                     <div className="border-t pl-6 py-4">
                         <SheetClose asChild>
                             <Button variant="ghost" onClick={logout} className="w-full justify-start">
