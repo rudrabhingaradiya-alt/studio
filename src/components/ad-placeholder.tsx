@@ -1,10 +1,13 @@
 
 'use client';
 
+import Script from 'next/script';
+
 export const AdPlaceholder = () => {
     return (
-        <div className="flex items-center justify-center h-24 w-full bg-muted rounded-lg border-2 border-dashed border-muted-foreground">
-            <span className="text-muted-foreground text-sm">Ad Placeholder</span>
+        <div>
+            <Script async={true} data-cfasync="false" src="//pl27854302.effectivegatecpm.com/02acce764911bed1366583e7db7ae0e8/invoke.js"></Script>
+            <div id="container-02acce764911bed1366583e7db7ae0e8"></div>
         </div>
     )
 }
