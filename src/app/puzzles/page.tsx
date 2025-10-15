@@ -30,6 +30,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AdPlaceholder } from '@/components/ad-placeholder';
 
 type Status = 'all' | 'solved' | 'unsolved';
 type Difficulty = 'all' | 'easy' | 'medium' | 'hard';
@@ -249,6 +250,12 @@ export default function PuzzlesPage() {
             ))}
           </div>
       </ScrollArea>
+       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <AdPlaceholder />
+            <AdPlaceholder />
+            <AdPlaceholder />
+            <AdPlaceholder />
+        </div>
     </div>
   );
 }

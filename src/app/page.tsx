@@ -7,6 +7,7 @@ import { DashboardCard } from '@/components/ui/dashboard-card';
 import { AuthCard } from '@/components/auth/auth-card';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
+import { AdPlaceholder } from '@/components/ad-placeholder';
 
 const gameModes = [
   {
@@ -152,6 +153,13 @@ export default function Home() {
                     />
                 </Link>
             )}
+        </div>
+
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <AdPlaceholder />
+            <AdPlaceholder />
+            <AdPlaceholder />
+            <AdPlaceholder />
         </div>
      </div>
   );
