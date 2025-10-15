@@ -53,7 +53,7 @@ export function AuthCard({ mode }: AuthCardProps) {
       } else {
         await signupWithEmail(email, password);
       }
-      router.push('/');
+      // Redirect is now handled by the AuthProvider
     } catch (error: any) {
       toast({
         variant: 'destructive',

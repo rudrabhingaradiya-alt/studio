@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   GoogleAuthProvider, 
   signInWithRedirect, 
@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGuest, setIsGuest] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { auth } = useFirebase();
   const { user, isUserLoading } = useUser();
 
@@ -61,11 +62,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    // Redirect user to home page after successful login
+    if (user && !isUserLoading && (pathname === '/login' || pathname === '/signup')) {
         Cookies.remove('isGuest');
         setIsGuest(false);
+        router.push('/');
     }
-  }, [user]);
+  }, [user, isUserLoading, pathname, router]);
 
   const isLoggedIn = !!user || isGuest;
 
