@@ -8,15 +8,15 @@ import { onDisconnect, ref, set } from 'firebase/database';
 import { getDatabase } from 'firebase/database';
 
 export const usePresence = (userId?: string) => {
-  const { firestore } = useFirebase();
+  const { firebaseApp, firestore } = useFirebase();
   const { user } = useUser();
 
   useEffect(() => {
-    if (!userId || !firestore || !user) {
+    if (!userId || !firestore || !user || !firebaseApp) {
       return;
     }
 
-    const db = getDatabase();
+    const db = getDatabase(firebaseApp);
     const presenceRef = doc(firestore, 'presence', userId);
     const rtdbRef = ref(db, `presence/${userId}`);
 
@@ -54,5 +54,5 @@ export const usePresence = (userId?: string) => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       // No need to explicitly set to offline on unmount, onDisconnect handles it.
     };
-  }, [userId, firestore, user]);
+  }, [userId, firestore, user, firebaseApp]);
 };
