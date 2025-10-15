@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,6 +19,7 @@ import AppleLogo from '@/components/icons/apple-logo';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 
 interface AuthCardProps {
@@ -25,9 +27,12 @@ interface AuthCardProps {
 }
 
 export function AuthCard({ mode }: AuthCardProps) {
-  const { loginWithGoogle, loginAsGuest } = useAuth();
+  const { loginWithGoogle, loginAsGuest, loginWithEmail, signupWithEmail } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const title = mode === 'login' ? 'Welcome Back' : 'Create an Account';
   const description =
@@ -40,9 +45,24 @@ export function AuthCard({ mode }: AuthCardProps) {
   const footerLink = mode === 'login' ? '/signup' : '/login';
   const footerLinkText = mode === 'login' ? 'Sign up' : 'Log in';
 
-  const handleAuthAction = () => {
-    // Placeholder for email/password auth
-    router.push('/');
+  const handleAuthAction = async () => {
+    setIsLoading(true);
+    try {
+      if (mode === 'login') {
+        await loginWithEmail(email, password);
+      } else {
+        await signupWithEmail(email, password);
+      }
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Failed',
+        description: error.message || 'An unexpected error occurred.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
   
   const handleGuest = () => {
@@ -51,15 +71,16 @@ export function AuthCard({ mode }: AuthCardProps) {
   }
   
   const handleGoogleLogin = async () => {
+    setIsLoading(true);
     try {
       await loginWithGoogle();
-      router.push('/');
-    } catch (error) {
-      console.error("Google login failed", error);
+      // Redirect is handled by Firebase
+    } catch (error: any) {
+      setIsLoading(false);
       toast({
         variant: 'destructive',
         title: "Authentication Failed",
-        description: "Could not log in with Google. Please try again."
+        description: error.message || "Could not log in with Google. Please try again."
       })
     }
   };
@@ -74,11 +95,11 @@ export function AuthCard({ mode }: AuthCardProps) {
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
                 <GoogleLogo className="mr-2 h-4 w-4" />
                 Google
             </Button>
-            <Button variant="outline" className="w-full" onClick={() => toast({ title: 'Coming Soon!', description: 'Apple sign-in will be available in a future update.'})}>
+            <Button variant="outline" className="w-full" onClick={() => toast({ title: 'Coming Soon!', description: 'Apple sign-in will be available in a future update.'})} disabled={isLoading}>
                 <AppleLogo className="mr-2 h-4 w-4" />
                 Apple
             </Button>
@@ -95,16 +116,18 @@ export function AuthCard({ mode }: AuthCardProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" />
+            <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" />
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
           </div>
           <Button
             onClick={handleAuthAction}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            disabled={isLoading}
           >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {buttonText}
           </Button>
         </div>
@@ -119,7 +142,7 @@ export function AuthCard({ mode }: AuthCardProps) {
             {footerLinkText}
           </Link>
         </div>
-        <Button variant="link" className="text-accent" onClick={handleGuest}>
+        <Button variant="link" className="text-accent" onClick={handleGuest} disabled={isLoading}>
             Continue as Guest
         </Button>
       </CardFooter>

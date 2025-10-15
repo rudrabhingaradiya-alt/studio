@@ -4,18 +4,48 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import { GoogleAuthProvider, signInWithRedirect, User, signOut } from 'firebase/auth';
+import { 
+  GoogleAuthProvider, 
+  signInWithRedirect, 
+  User, 
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  AuthError
+} from 'firebase/auth';
 import { useFirebase, useUser } from '@/firebase';
 
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   loginWithGoogle: () => Promise<void>;
+  signupWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   loginAsGuest: () => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const formatAuthError = (error: AuthError): string => {
+  switch (error.code) {
+    case 'auth/email-already-in-use':
+      return 'This email address is already in use.';
+    case 'auth/invalid-email':
+      return 'The email address is not valid.';
+    case 'auth/operation-not-allowed':
+      return 'Email/password accounts are not enabled.';
+    case 'auth/weak-password':
+      return 'The password is too weak.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+        return 'Invalid credentials. Please check your email and password.';
+    default:
+      return 'An unknown authentication error occurred.';
+  }
+}
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGuest, setIsGuest] = useState(false);
@@ -43,11 +73,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithRedirect(auth, provider);
-      // The redirect will cause the page to reload, and the onAuthStateChanged
-      // listener will handle the user state.
     } catch (error) {
       console.error("Error during Google sign-in redirect:", error);
       throw error;
+    }
+  };
+  
+  const signupWithEmail = async (email: string, password: string) => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      throw new Error(formatAuthError(error as AuthError));
+    }
+  };
+
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      throw new Error(formatAuthError(error as AuthError));
     }
   };
 
@@ -65,7 +109,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     Cookies.remove('isGuest');
     setIsGuest(false);
-    // Redirect to home to reflect logged-out state
     router.push('/');
   };
 
@@ -73,6 +116,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     isLoggedIn,
     loginWithGoogle,
+    signupWithEmail,
+    loginWithEmail,
     loginAsGuest,
     logout,
   };
