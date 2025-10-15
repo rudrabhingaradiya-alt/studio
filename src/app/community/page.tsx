@@ -25,20 +25,21 @@ interface PresenceData {
 export default function CommunityPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const presenceQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null; // Wait for user to be authenticated
     return query(
       collection(firestore, 'presence'),
       where('status', '==', 'online'),
       orderBy('displayName', 'asc')
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
-  const { data: onlineUsers, isLoading } = useCollection<PresenceData>(presenceQuery);
+  const { data: onlineUsers, isLoading: isPresenceLoading } = useCollection<PresenceData>(presenceQuery);
   
   const otherOnlineUsers = onlineUsers?.filter(u => u.id !== user?.uid);
+  const isLoading = isUserLoading || isPresenceLoading;
 
 
   const handleInvite = (userName: string) => {
