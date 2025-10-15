@@ -1,13 +1,30 @@
 
 'use client';
-import { redirect } from 'next/navigation';
-import { BrainCircuit, User, Users, Calendar, Puzzle as PuzzleIcon, Timer } from 'lucide-react';
+import { BrainCircuit, User, Users, Calendar, Puzzle as PuzzleIcon, Timer, Loader2, Swords } from 'lucide-react';
 import { puzzles, type Puzzle } from '@/lib/puzzles';
 import { DashboardCard } from '@/components/ui/dashboard-card';
-import { AuthCard } from '@/components/auth/auth-card';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { AdPlaceholder } from '@/components/ad-placeholder';
+import { useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useCollection, useFirebase } from '@/firebase';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+interface PresenceData {
+  status: 'online' | 'offline';
+  last_seen: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  displayName: string;
+  photoURL?: string;
+}
 
 const gameModes = [
   {
@@ -49,8 +66,81 @@ function getDailyPuzzle(): Puzzle {
     return puzzles[puzzleIndex];
 }
 
+const OnlinePlayers = () => {
+  const { firestore } = useFirebase();
+  const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+
+  const presenceQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'presence'),
+      where('status', '==', 'online'),
+      orderBy('displayName', 'asc')
+    );
+  }, [firestore, user]);
+
+  const { data: onlineUsers, isLoading: isPresenceLoading } = useCollection<PresenceData>(presenceQuery);
+  
+  const otherOnlineUsers = onlineUsers?.filter(u => u.id !== user?.uid);
+  const isLoading = isUserLoading || isPresenceLoading;
+
+  const handleInvite = (userName: string) => {
+    toast({
+      title: 'Coming Soon!',
+      description: `Game invites will be available in a future update.`,
+    });
+  };
+
+  return (
+    <Card className="col-span-1 lg:col-span-3">
+        <CardHeader>
+          <CardTitle>Online Players</CardTitle>
+          <CardDescription>
+            {isLoading ? 'Loading...' : `${otherOnlineUsers?.length || 0} players currently online.`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <ScrollArea className="h-64">
+              <div className="space-y-4">
+                {otherOnlineUsers && otherOnlineUsers.length > 0 ? (
+                  otherOnlineUsers.map((player) => (
+                    <div key={player.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <Avatar>
+                          <AvatarImage src={player.photoURL} alt={player.displayName} />
+                          <AvatarFallback>{player.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold">{player.displayName}</p>
+                          <Badge variant="secondary" className="bg-green-500 text-white">Online</Badge>
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={() => handleInvite(player.displayName)}>
+                        <Swords className="mr-2 h-4 w-4" />
+                        Invite to Play
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground">No other players are online right now.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
+  )
+}
+
 export default function Home() {
-  const { isLoggedIn } = useAuth();
   const dailyPuzzle = getDailyPuzzle();
 
   return (
@@ -133,6 +223,7 @@ export default function Home() {
                     />
                 </Link>
             )}
+             <OnlinePlayers />
         </div>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

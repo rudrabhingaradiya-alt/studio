@@ -26,7 +26,6 @@ const navLinks = [
   { href: '/play', label: 'Play' },
   { href: '/puzzles', label: 'Puzzles' },
   { href: '/puzzle-rush', label: 'Puzzle Rush' },
-  { href: '/community', label: 'Community' },
 ];
 
 const UserDropdown = () => {
