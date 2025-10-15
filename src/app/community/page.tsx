@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useCollection, useFirebase } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,8 +25,9 @@ interface PresenceData {
 export default function CommunityPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const { user } = useUser();
 
-  const presenceQuery = useMemo(() => {
+  const presenceQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'presence'),
@@ -36,6 +37,9 @@ export default function CommunityPage() {
   }, [firestore]);
 
   const { data: onlineUsers, isLoading } = useCollection<PresenceData>(presenceQuery);
+  
+  const otherOnlineUsers = onlineUsers?.filter(u => u.id !== user?.uid);
+
 
   const handleInvite = (userName: string) => {
     toast({
@@ -59,7 +63,7 @@ export default function CommunityPage() {
         <CardHeader>
           <CardTitle>Online Players</CardTitle>
           <CardDescription>
-            {isLoading ? 'Loading...' : `${onlineUsers?.length || 0} players currently online.`}
+            {isLoading ? 'Loading...' : `${otherOnlineUsers?.length || 0} players currently online.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -70,8 +74,8 @@ export default function CommunityPage() {
           ) : (
             <ScrollArea className="h-96">
               <div className="space-y-4">
-                {onlineUsers && onlineUsers.length > 0 ? (
-                  onlineUsers.map((user) => (
+                {otherOnlineUsers && otherOnlineUsers.length > 0 ? (
+                  otherOnlineUsers.map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-4">
                         <Avatar>
