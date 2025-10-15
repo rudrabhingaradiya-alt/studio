@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { ChevronLeft, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, Trophy } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ChevronLeft, BookOpen, BarChart, Sparkles, AlertTriangle, XCircle, Trophy, ChevronsRight, ChevronsLeft, ChevronRight, ChevronLeft as ChevronLeftIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Chessboard, { Move } from '@/components/puzzles/chessboard';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,13 @@ import type { GameAnalysisOutput } from '@/ai/flows/game-analysis-flow';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '../ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
-export const GameReview = ({ analysis, moveHistory, onBack, currentMoveIndex, setCurrentMoveIndex }: { analysis: GameAnalysisOutput, moveHistory: Move[], onBack: () => void, currentMoveIndex: number, setCurrentMoveIndex: (index: number) => void }) => {
+export const GameReview = ({ analysis, moveHistory: initialMoveHistory, onBack }: { analysis: GameAnalysisOutput, moveHistory: Move[], onBack: () => void }) => {
     const { boardTheme } = useTheme();
+    const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+
+    const moveHistory = useMemo(() => [{ before: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', after: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', san: 'Start' }, ...initialMoveHistory], [initialMoveHistory])
 
     const moveClassificationStyles = {
         brilliant: { icon: <Sparkles className="text-cyan-400" />, text: 'text-cyan-400', label: 'Brilliant' },
@@ -43,12 +47,48 @@ export const GameReview = ({ analysis, moveHistory, onBack, currentMoveIndex, se
                 Back to Menu
             </Button>
             <div className="grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 space-y-4">
                     <Chessboard
                         isStatic
                         boardTheme={boardTheme}
                         initialFen={moveHistory[currentMoveIndex]?.before}
                     />
+                     <div className="flex items-center justify-center gap-2">
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" size="icon" onClick={() => setCurrentMoveIndex(0)} disabled={currentMoveIndex === 0}>
+                                        <ChevronsLeft />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>First Move</p></TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" size="icon" onClick={() => setCurrentMoveIndex(p => Math.max(0, p - 1))} disabled={currentMoveIndex === 0}>
+                                        <ChevronLeftIcon />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Previous Move</p></TooltipContent>
+                            </Tooltip>
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" size="icon" onClick={() => setCurrentMoveIndex(p => Math.min(moveHistory.length - 1, p + 1))} disabled={currentMoveIndex === moveHistory.length - 1}>
+                                        <ChevronRight />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Next Move</p></TooltipContent>
+                            </Tooltip>
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                     <Button variant="outline" size="icon" onClick={() => setCurrentMoveIndex(moveHistory.length - 1)} disabled={currentMoveIndex === moveHistory.length - 1}>
+                                        <ChevronsRight />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Last Move</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                 </div>
                 <div className="space-y-4">
                     <Card>
@@ -148,3 +188,5 @@ export const GameReview = ({ analysis, moveHistory, onBack, currentMoveIndex, se
         </div>
     );
 };
+
+    
