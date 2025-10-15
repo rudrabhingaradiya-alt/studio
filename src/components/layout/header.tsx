@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, User, TrendingUp, LogOut } from 'lucide-react';
+import { Menu, User, TrendingUp, LogOut, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,7 +26,7 @@ const navLinks = [
   { href: '/play', label: 'Play' },
   { href: '/puzzles', label: 'Puzzles' },
   { href: '/puzzle-rush', label: 'Puzzle Rush' },
-  { href: '/profile', label: 'History' },
+  { href: '/community', label: 'Community' },
 ];
 
 const UserDropdown = () => {
@@ -74,7 +74,7 @@ const UserDropdown = () => {
 };
 
 const Header = () => {
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -132,7 +132,7 @@ const Header = () => {
                  {isLoggedIn && user && (
                     <div className="border-t pl-6 py-4">
                         <SheetClose asChild>
-                            <Button variant="ghost" onClick={logout} className="w-full justify-start">
+                            <Button variant="ghost" /*onClick={logout}*/ className="w-full justify-start">
                                 <LogOut className="mr-2 h-4 w-4" />
                                 Log out
                             </Button>

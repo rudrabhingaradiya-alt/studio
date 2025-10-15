@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -134,6 +135,38 @@
         "solvedDate",
         "attempts"
       ]
+    },
+    "Presence": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Presence",
+      "type": "object",
+      "description": "Tracks the online status of a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User's UID. Unique identifier for the Presence entity."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["online", "offline"],
+          "description": "The user's current online status."
+        },
+        "last_seen": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of the user's last status change."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name, for easy access."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's avatar."
+        }
+      },
+      "required": ["id", "status", "last_seen"]
     }
   },
   "auth": {
@@ -213,6 +246,22 @@
             {
               "name": "puzzleHistoryId",
               "description": "The unique identifier for the puzzle history entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/presence/{userId}",
+        "definition": {
+          "entityName": "Presence",
+          "schema": {
+            "$ref": "#/backend/entities/Presence"
+          },
+          "description": "Tracks user online status. Publicly readable by all authenticated users. Each user can only write to their own presence document.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Auth's uid."
             }
           ]
         }

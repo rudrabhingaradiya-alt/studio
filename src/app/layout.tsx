@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/context/theme-context';
 import { AuthProvider } from '@/context/auth-context';
 import LayoutProvider from '@/components/layout/layout-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { PresenceProvider } from '@/context/presence-context';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -31,8 +32,10 @@ export default function RootLayout({
         <ThemeProvider>
           <FirebaseClientProvider>
             <AuthProvider>
-              <LayoutProvider>{children}</LayoutProvider>
-              <Toaster />
+              <PresenceProvider>
+                <LayoutProvider>{children}</LayoutProvider>
+                <Toaster />
+              </PresenceProvider>
             </AuthProvider>
           </FirebaseClientProvider>
         </ThemeProvider>
