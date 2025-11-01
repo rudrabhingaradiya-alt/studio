@@ -11,7 +11,6 @@ import {
   signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  onAuthStateChanged,
   AuthError
 } from 'firebase/auth';
 import { useFirebase, useUser } from '@/firebase';
@@ -77,8 +76,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     // If logged in and on a login/signup page, redirect to home
     if (isLoggedIn && (pathname === '/login' || pathname === '/signup')) {
-        Cookies.remove('isGuest');
-        setIsGuest(false);
+        if(user) {
+            Cookies.remove('isGuest');
+            setIsGuest(false);
+        }
         router.push('/');
     }
   }, [user, isUserLoading, isLoggedIn, isMounted, pathname, router]);
@@ -113,8 +114,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (user) {
       signOut(auth);
     }
-    setIsGuest(true);
     Cookies.set('isGuest', 'true', { expires: 1 }); // Guest session for 1 day
+    setIsGuest(true);
     router.push('/');
   };
 
