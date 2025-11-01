@@ -46,7 +46,7 @@ const formatAuthError = (error: AuthError): string => {
   }
 }
 
-const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush', '/community'];
+const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush'];
 const publicOnlyRoutes = ['/login', '/signup'];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -57,13 +57,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { auth } = useFirebase();
   const { user, isUserLoading } = useUser();
 
+  const isLoggedIn = !!user || isGuest;
+
   useEffect(() => {
-    setIsMounted(true);
     const guestStatus = Cookies.get('isGuest') === 'true';
     setIsGuest(guestStatus);
+    setIsMounted(true);
   }, []);
-
-  const isLoggedIn = !!user || isGuest;
 
   useEffect(() => {
     if (isUserLoading || !isMounted) return;
@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     Cookies.set('isGuest', 'true', { expires: 1 });
     setIsGuest(true);
-    // The useEffect hook will handle the redirect
+    router.push('/');
   };
 
   const logout = () => {
