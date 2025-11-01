@@ -46,7 +46,8 @@ const formatAuthError = (error: AuthError): string => {
   }
 }
 
-const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush'];
+const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush', '/community'];
+const publicOnlyRoutes = ['/login', '/signup'];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGuest, setIsGuest] = useState(false);
@@ -75,12 +76,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+    const isPublicOnlyRoute = publicOnlyRoutes.includes(pathname);
 
     if (isProtectedRoute && !isLoggedIn) {
       router.push('/login');
     }
     
-    if (isLoggedIn && (pathname === '/login' || pathname === '/signup')) {
+    if (isLoggedIn && isPublicOnlyRoute) {
         router.push('/');
     }
   }, [user, isUserLoading, isLoggedIn, isMounted, pathname, router, isGuest]);
@@ -117,7 +119,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     Cookies.set('isGuest', 'true', { expires: 1 });
     setIsGuest(true);
-    router.push('/');
+    // The useEffect hook will handle the redirect
   };
 
   const logout = () => {
