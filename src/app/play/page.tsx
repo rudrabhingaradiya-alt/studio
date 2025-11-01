@@ -35,14 +35,13 @@ const gameModes = [
 ];
 
 export default function PlayPage() {
+  const router = useRouter();
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
-       <Button variant="ghost" asChild className="mb-4">
-        <Link href="/">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Link>
+       <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
       </Button>
       <div className="mx-auto max-w-3xl text-center">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
