@@ -67,7 +67,6 @@ export function AuthCard({ mode }: AuthCardProps) {
   
   const handleGuest = () => {
     loginAsGuest();
-    router.push('/');
   }
   
   const handleGoogleLogin = async () => {

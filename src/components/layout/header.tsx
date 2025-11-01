@@ -42,19 +42,21 @@ const UserDropdown = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {isLoggedIn ? (user ? user.displayName || 'User' : 'Guest') : 'Guest'}
+              {user ? user.displayName || 'User' : 'Guest'}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {isLoggedIn ? (user ? user.email : 'guest@chessarena.com') : 'guest@chessarena.com'}
+              {user ? user.email : 'guest@chessarena.com'}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {isLoggedIn && user ? (
+        {isLoggedIn ? (
           <>
-            <DropdownMenuItem asChild>
-              <Link href="/profile">Profile</Link>
-            </DropdownMenuItem>
+            {user && (
+              <DropdownMenuItem asChild>
+                <Link href="/profile">Profile</Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
           </>
         ) : (
@@ -128,10 +130,10 @@ const Header = () => {
                       ))}
                     </div>
                 </div>
-                 {isLoggedIn && user && (
+                 {isLoggedIn && (
                     <div className="border-t pl-6 py-4">
                         <SheetClose asChild>
-                            <Button variant="ghost" /*onClick={logout}*/ className="w-full justify-start">
+                            <Button variant="ghost" onClick={logout} className="w-full justify-start">
                                 <LogOut className="mr-2 h-4 w-4" />
                                 Log out
                             </Button>
