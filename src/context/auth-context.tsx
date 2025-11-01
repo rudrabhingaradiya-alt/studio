@@ -46,7 +46,7 @@ const formatAuthError = (error: AuthError): string => {
   }
 }
 
-const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush', '/community'];
+const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush'];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGuest, setIsGuest] = useState(false);
@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     Cookies.set('isGuest', 'true', { expires: 1 });
     setIsGuest(true);
-    // The useEffect will handle the redirect
+    router.push('/');
   };
 
   const logout = () => {
