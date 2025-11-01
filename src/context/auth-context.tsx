@@ -46,7 +46,7 @@ const formatAuthError = (error: AuthError): string => {
   }
 }
 
-const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush'];
+const protectedRoutes = ['/profile', '/play', '/puzzles', '/puzzle-rush', '/community'];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGuest, setIsGuest] = useState(false);
@@ -65,24 +65,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isLoggedIn = !!user || isGuest;
 
   useEffect(() => {
-    if (isUserLoading || !isMounted) return; // Wait until loading is complete
+    if (isUserLoading || !isMounted) return;
+
+    if (user) {
+      if (isGuest) {
+        Cookies.remove('isGuest');
+        setIsGuest(false);
+      }
+    }
 
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
-    // If on a protected route and not logged in, redirect to login
     if (isProtectedRoute && !isLoggedIn) {
       router.push('/login');
     }
     
-    // If logged in and on a login/signup page, redirect to home
     if (isLoggedIn && (pathname === '/login' || pathname === '/signup')) {
-        if(user) {
-            Cookies.remove('isGuest');
-            setIsGuest(false);
-        }
         router.push('/');
     }
-  }, [user, isUserLoading, isLoggedIn, isMounted, pathname, router]);
+  }, [user, isUserLoading, isLoggedIn, isMounted, pathname, router, isGuest]);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -114,9 +115,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (user) {
       signOut(auth);
     }
-    Cookies.set('isGuest', 'true', { expires: 1 }); // Guest session for 1 day
+    Cookies.set('isGuest', 'true', { expires: 1 });
     setIsGuest(true);
-    router.push('/');
+    // The useEffect will handle the redirect
   };
 
   const logout = () => {
